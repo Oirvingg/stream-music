@@ -59,8 +59,8 @@ interface PlayerState {
   
   activePlaylistId: string | null;
   setActivePlaylistId: (id: string | null) => void;
-  activePage: 'HOME' | 'EXPLORE';
-  setActivePage: (page: 'HOME' | 'EXPLORE') => void;
+  activePage: 'HOME' | 'EXPLORE' | 'LIBRARY';
+  setActivePage: (page: 'HOME' | 'EXPLORE' | 'LIBRARY') => void;
   reorderQueue: (startIndex: number, endIndex: number) => void;
   
   feedbackMessage: string | null;

@@ -51,10 +51,17 @@ export function PlayerBar() {
         <span className="text-2xl font-bold tracking-wide">{feedbackMessage}</span>
       </div>
 
-      <footer className="h-[72px] bg-yt-player-bg flex items-center px-4 select-none shrink-0 z-50 relative">
+      <footer className="h-14 md:h-[72px] bg-yt-player-bg flex items-center px-2 md:px-4 select-none shrink-0 z-50 relative">
+      {/* Mobile-only thin progress bar at top */}
+      <div className="absolute top-0 left-0 right-0 h-[2px] bg-white/10 md:hidden">
+        <div 
+          className="h-full bg-red-500 transition-all duration-200"
+          style={{ width: duration > 0 ? `${(currentTime / duration) * 100}%` : '0%' }}
+        />
+      </div>
       {/* LEFT — Transport controls + time */}
-      <div className="flex items-center gap-1 min-w-[320px] w-1/3">
-        <button onClick={handlePrevTrack} className="p-2 text-white/70 hover:text-white transition-colors">
+      <div className="flex items-center gap-1 md:min-w-[320px] md:w-1/3">
+        <button onClick={handlePrevTrack} className="hidden md:block p-2 text-white/70 hover:text-white transition-colors">
           <SkipBack className="w-5 h-5" />
         </button>
 
@@ -70,7 +77,7 @@ export function PlayerBar() {
           )}
         </button>
 
-        <button onClick={nextTrack} className="p-2 text-white/70 hover:text-white transition-colors">
+        <button onClick={nextTrack} className="hidden md:block p-2 text-white/70 hover:text-white transition-colors">
           <SkipForward className="w-5 h-5" />
         </button>
 
@@ -80,10 +87,10 @@ export function PlayerBar() {
           max={duration > 0 ? duration : 100} 
           value={currentTime || 0} 
           onChange={(e) => seek(Number(e.target.value))} 
-          className="w-full h-1 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-red-600 mx-3" 
+          className="hidden md:block w-full h-1 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-red-600 mx-3" 
         />
 
-        <span className="text-xs text-yt-text-secondary font-medium tabular-nums whitespace-nowrap">
+        <span className="hidden md:inline text-xs text-yt-text-secondary font-medium tabular-nums whitespace-nowrap">
           {formatTime(currentTime)} / {formatTime(duration)}
         </span>
       </div>
@@ -109,7 +116,7 @@ export function PlayerBar() {
               </span>
             </div>
 
-            <div className="flex items-center gap-1 ml-4">
+            <div className="hidden md:flex items-center gap-1 ml-4">
               <button className="p-1.5 text-white/60 hover:text-white transition-colors">
                 <ThumbsDown className="w-4 h-4" />
               </button>
@@ -124,36 +131,36 @@ export function PlayerBar() {
       </div>
 
       {/* RIGHT — Volume, repeat, expand */}
-      <div className="flex items-center gap-1 min-w-[200px] justify-end">
-        <button
-          onClick={() => setVolume(volume === 0 ? 1 : 0)}
-          className="p-2 text-white/60 hover:text-white transition-colors"
-        >
-          {volume === 0 ? (
-            <VolumeX className="w-5 h-5" />
-          ) : (
-            <Volume2 className="w-5 h-5" />
-          )}
-        </button>
+        <div className="hidden md:flex items-center gap-1 min-w-[200px] justify-end">
+          <button
+            onClick={() => setVolume(volume === 0 ? 1 : 0)}
+            className="p-2 text-white/60 hover:text-white transition-colors"
+          >
+            {volume === 0 ? (
+              <VolumeX className="w-5 h-5" />
+            ) : (
+              <Volume2 className="w-5 h-5" />
+            )}
+          </button>
 
-        <input
-          type="range"
-          min="0"
-          max="1"
-          step="0.01"
-          value={volume}
-          onChange={(e) => setVolume(parseFloat(e.target.value))}
-          className="w-20 h-1"
-        />
+          <input
+            type="range"
+            min="0"
+            max="1"
+            step="0.01"
+            value={volume}
+            onChange={(e) => setVolume(parseFloat(e.target.value))}
+            className="w-20 h-1"
+          />
 
-        <button className="p-2 text-white/60 hover:text-white transition-colors">
-          <Repeat className="w-4 h-4" />
-        </button>
+          <button className="p-2 text-white/60 hover:text-white transition-colors">
+            <Repeat className="w-4 h-4" />
+          </button>
 
-        <button onClick={toggleExpand} className="p-2 text-white/60 hover:text-white transition-colors ml-1">
-          <Maximize2 className="w-4 h-4" />
-        </button>
-      </div>
+          <button onClick={toggleExpand} className="p-2 text-white/60 hover:text-white transition-colors ml-1">
+            <Maximize2 className="w-4 h-4" />
+          </button>
+        </div>
     </footer>
     </>
   );

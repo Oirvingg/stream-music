@@ -24,12 +24,18 @@ export function Sidebar() {
     setActivePage('EXPLORE');
   };
 
+  const handleLibraryClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setActivePlaylistId(null);
+    setActivePage('LIBRARY');
+  };
+
   const handleCreatePlaylist = (name: string) => {
     createPlaylist(name);
   };
 
   return (
-    <aside className="w-[240px] min-w-[240px] h-full flex flex-col bg-transparent select-none">
+    <aside className="hidden md:block w-[240px] min-w-[240px] h-full flex flex-col bg-transparent select-none">
       {/* Logo */}
       <div className="flex items-center gap-2 px-6 pt-5 pb-2">
         <div className="w-7 h-7 rounded-full bg-red-600 flex items-center justify-center">
@@ -50,7 +56,7 @@ export function Sidebar() {
           <Compass className="w-5 h-5" />
           Explorar
         </a>
-        <a href="#" className="flex items-center gap-5 px-4 py-2.5 rounded-lg text-yt-text-secondary hover:text-white hover:bg-white/5 text-sm font-medium transition-colors">
+        <a href="#" onClick={handleLibraryClick} className={`flex items-center gap-5 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${!activePlaylistId && activePage === 'LIBRARY' ? 'bg-white/10 text-white' : 'text-yt-text-secondary hover:text-white hover:bg-white/5'}`}>
           <Library className="w-5 h-5" />
           Biblioteca
         </a>

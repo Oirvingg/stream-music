@@ -40,7 +40,7 @@ export function Explore() {
 
   if (selectedCategory) {
     return (
-      <main className="flex-1 flex flex-col overflow-y-auto px-6 py-8">
+      <main className="flex-1 flex flex-col overflow-y-auto px-3 md:px-6 py-8">
         <div className="flex items-center gap-4 mb-8">
           <button 
             onClick={() => setSelectedCategory(null)}
@@ -48,7 +48,7 @@ export function Explore() {
           >
             <ChevronLeft className="w-6 h-6 text-white" />
           </button>
-          <h1 className="text-4xl font-bold text-white">{selectedCategory.name}</h1>
+          <h1 className="text-2xl md:text-4xl font-bold text-white">{selectedCategory.name}</h1>
         </div>
 
         <section className="mb-8">
@@ -74,7 +74,7 @@ export function Explore() {
                 return (
                   <div
                     key={track.id}
-                    className="flex items-center gap-4 p-2 rounded-md cursor-pointer hover:bg-zinc-800/60 transition-colors group"
+                    className="flex items-center gap-4 p-2 rounded-md cursor-pointer hover:bg-zinc-800/60 transition-colors group min-h-[44px]"
                     onClick={(e) => {
                       if ((e.target as HTMLElement).closest('button')) return;
                       handlePlayTrack(track);
@@ -125,12 +125,12 @@ export function Explore() {
   }
 
   return (
-    <main className="flex-1 flex flex-col overflow-y-auto px-6 py-8">
-      <h1 className="text-4xl font-bold text-white mb-8">Explorar</h1>
+    <main className="flex-1 flex flex-col overflow-y-auto px-3 md:px-6 py-6 md:py-8 pb-32 md:pb-8">
+      <h1 className="text-2xl md:text-4xl font-bold text-white mb-6 md:mb-8">Explorar</h1>
 
       <section className="mb-12">
-        <h2 className="text-2xl font-semibold text-white mb-4">Gêneros e Momentos</h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <h2 className="text-lg md:text-2xl font-semibold text-white mb-4">Gêneros e Momentos</h2>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
           {EXPLORE_CATEGORIES.map(category => (
             <div 
               key={category.id} 
@@ -145,7 +145,7 @@ export function Explore() {
       </section>
 
       <section className="mb-8">
-        <h2 className="text-2xl font-semibold text-white mb-4">Mais Tocadas</h2>
+        <h2 className="text-lg md:text-2xl font-semibold text-white mb-4">Mais Tocadas</h2>
         
         {isLoading ? (
           <div className="flex flex-col gap-2">
@@ -169,7 +169,7 @@ export function Explore() {
               return (
                 <div
                   key={track.id}
-                  className="flex items-center gap-4 p-2 rounded-md cursor-pointer hover:bg-zinc-800/60 transition-colors group"
+                  className="flex items-center gap-3 md:gap-4 p-2 rounded-md cursor-pointer hover:bg-zinc-800/60 transition-colors group min-h-[44px]"
                   onClick={(e) => {
                     if ((e.target as HTMLElement).closest('button')) return;
                     handlePlayTrack(track);

@@ -1,8 +1,9 @@
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useState } from 'react';
 import { ChevronLeft, ChevronRight, MoreVertical, Play, Trash } from 'lucide-react';
 import { usePlayerStore } from '../store/usePlayerStore';
 import { Track } from '../types/music';
 import { TrackContextMenu } from '../components/TrackContextMenu';
+import { TrackCard } from '../components/cards/TrackCard';
 import { PlaylistModal } from '../components/PlaylistModal';
 import { DraggableTrackRow } from '../components/DraggableTrackRow';
 import { useTrendingTracks, useSearchTracks, usePersonalizedTrendingTracks } from '../hooks/useMusicQueries';
@@ -17,7 +18,7 @@ function MusicSectionSkeleton({ title }: { title: string }) {
   return (
     <section className="mb-8">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-[22px] font-semibold text-white">{title}</h2>
+        <h2 className="text-sm md:text-[22px] font-semibold text-white">{title}</h2>
       </div>
       <div className="flex gap-4 overflow-hidden">
         {Array.from({ length: 6 }).map((_, i) => (
@@ -34,14 +35,6 @@ function MusicSectionSkeleton({ title }: { title: string }) {
 
 function MusicSection({ title, tracks }: { title: string; tracks: Track[] }) {
   const scrollRef = useRef<HTMLDivElement>(null);
-  const { setTrack, currentTrack, isPlaying, togglePlay } = usePlayerStore();
-  const [contextMenu, setContextMenu] = useState<{ track: Track; x: number; y: number } | null>(null);
-
-  const handleContextMenu = (e: React.MouseEvent, track: Track) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setContextMenu({ track, x: e.clientX, y: e.clientY });
-  };
 
   const scroll = (dir: 'left' | 'right') => {
     if (!scrollRef.current) return;
@@ -52,18 +45,10 @@ function MusicSection({ title, tracks }: { title: string; tracks: Track[] }) {
     });
   };
 
-  const handleClick = (track: Track) => {
-    if (currentTrack?.id === track.id) {
-      togglePlay();
-    } else {
-      setTrack(track);
-    }
-  };
-
   return (
     <section className="mb-8">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-[22px] font-semibold text-white">{title}</h2>
+        <h2 className="text-base md:text-[22px] font-semibold text-white">{title}</h2>
         <div className="flex items-center gap-1">
           <button
             onClick={() => scroll('left')}
@@ -84,71 +69,15 @@ function MusicSection({ title, tracks }: { title: string; tracks: Track[] }) {
         ref={scrollRef}
         className="flex gap-4 overflow-x-auto no-scrollbar scroll-smooth"
       >
-        {tracks.map((track) => {
-          const isActive = currentTrack?.id === track.id;
-          const artistLabel = typeof track.artist === 'string' ? track.artist : track.artist.name;
-
-          return (
-            <div
-              key={track.id}
-              onClick={() => handleClick(track)}
-              onContextMenu={(e) => handleContextMenu(e, track)}
-              className="flex-shrink-0 w-[170px] group cursor-pointer relative"
-            >
-              <div className="relative aspect-square w-full rounded-md overflow-hidden mb-2">
-                <img
-                  src={track.coverUrl}
-                  alt={track.title}
-                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                />
-
-                <div className={`absolute inset-0 bg-black/40 flex items-center justify-center transition-opacity duration-200 ${
-                  isActive && isPlaying ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
-                }`}>
-                  <div className="w-12 h-12 rounded-full bg-white/90 flex items-center justify-center">
-                    {isActive && isPlaying ? (
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="#030303">
-                        <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
-                      </svg>
-                    ) : (
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="#030303">
-                        <path d="M8 5v14l11-7L8 5z" />
-                      </svg>
-                    )}
-                  </div>
-                </div>
-
-                {isActive && (
-                  <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-white" />
-                )}
-
-                <button 
-                  className="absolute top-2 right-2 p-1.5 bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-10 hover:bg-black/80"
-                  onClick={(e) => handleContextMenu(e, track)}
-                >
-                  <MoreVertical className="w-5 h-5 text-white" />
-                </button>
-              </div>
-
-              <p className="text-sm font-medium text-white truncate leading-5">
-                {track.title}
-              </p>
-              <p className="text-xs text-yt-text-secondary truncate leading-4">
-                {artistLabel}{track.album ? ` • ${track.album}` : ''}
-              </p>
-            </div>
-          );
-        })}
+        {tracks.map((track) => (
+          <TrackCard
+            key={track.id}
+            track={track}
+            trackList={tracks}
+            className="flex-shrink-0 w-[170px]"
+          />
+        ))}
       </div>
-
-      {contextMenu && (
-        <TrackContextMenu 
-          track={contextMenu.track} 
-          x={contextMenu.x} 
-          y={contextMenu.y} 
-          onClose={() => setContextMenu(null)} 
-        />
-      )}
     </section>
   );
 }
@@ -177,7 +106,7 @@ export function Home() {
   if (activePlaylist) {
     return (
       <main className="flex-1 flex flex-col overflow-hidden relative">
-        <div className="flex-1 overflow-y-auto px-6 py-8">
+        <div className="flex-1 overflow-y-auto px-3 md:px-6 py-8">
           <div className="flex items-end justify-between mb-8">
             <div>
               <h1 className="text-4xl font-bold text-white mb-2">{activePlaylist.name}</h1>
@@ -294,12 +223,12 @@ export function Home() {
 
   return (
     <main className="flex-1 flex flex-col overflow-hidden">
-      <div className="flex-1 overflow-y-auto px-6 pb-4">
+      <div className="flex-1 overflow-y-auto px-3 md:px-6 pb-32 md:pb-4">
         <div className="flex gap-2 py-4 overflow-x-auto no-scrollbar">
           {CATEGORIES.map((cat, i) => (
             <button
               key={cat}
-              className={`flex-shrink-0 px-4 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+              className={`flex-shrink-0 px-4 py-1.5 min-h-[44px] rounded-lg text-xs md:text-sm font-medium transition-colors ${
                 i === 0
                   ? 'bg-white text-yt-black'
                   : 'bg-yt-pill text-white/80 hover:bg-yt-surface-hover'
