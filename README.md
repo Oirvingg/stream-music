@@ -1,54 +1,52 @@
-# 🎵 Stream Music - Plataforma de Streaming de Áudio
+# 🎵 Stream Music
 
-<p align="center">
-  <img src="./src/assets/preview.png" alt="Stream Music Interface" width="100%">
-</p>
-
-O **Stream Music** é uma aplicação Full-Stack inspirada em plataformas modernas como YouTube Music e Spotify. O projeto foi desenvolvido com foco em alta performance, UI/UX refinada em Dark Mode, controle global de áudio, sincronização de letras e documentação interativa de API.
+Uma aplicação web moderna para reprodução e streaming de música. Este projeto foi desenvolvido para oferecer uma experiência fluida de reprodução de áudio na web.
 
 ---
 
-## 🚀 Tecnologias Utilizadas
-
-### Front-End
-- **React.js** (com Vite)
-- **TypeScript**
-- **Tailwind CSS**
-- **Lucide React** (Ícones)
-
-### Back-End
-- **Node.js + Express**
-- **Firebase Auth** (Autenticação de usuários e Google Provider)
-- **Swagger UI / OpenAPI 3.0** (Documentação interativa da API)
+## 📌 Conteúdo
+- [Sobre o Projeto](#-sobre-o-projeto)
+- [Funcionalidades](#-funcionalidades)
+- [Tecnologias Utilizadas](#-tecnologias-utilizadas)
+- [Como Executar Localmente](#-como-executar-localmente)
+- [Estrutura do Projeto](#-estrutura-do-projeto)
+- [Contribuição](#-contribuição)
+- [Licença](#-licença)
 
 ---
 
-## ✨ Funcionalidades Principais
+## 🚀 Sobre o Projeto
 
-- 🎧 **Player de Áudio Global:** Reprodução contínua ao navegar pelas páginas.
-- 🎤 **Lyrics View:** Visualização de letras de música com destaque da estrofe atual.
-- 🔐 **Autenticação Completa:** Modal de Login, Cadastro, Recuperação de Senha e Login com Google.
-- 📄 **API Documentada:** Swagger UI integrado para testar todas as rotas REST (`/songs`, `/auth`).
-- 🎨 **Interface Dark Mode:** Layout responsivo, moderno e otimizado.
+O **Stream Music** é um projeto pessoal pensado por mim para treinar minhas habilidades full-stack
 
 ---
 
-## 📑 Documentação da API (Swagger UI)
+## ✨ Funcionalidades
 
-A API conta com documentação interativa OpenAPI 3.0. Para testar as rotas localmente, acesse:
-`http://localhost:3000/api-docs`
+- [x] Reprodução de áudio em tempo real (Play / Pause / Next / Previous)
+- [x] Controle de volume e barra de progresso interativa
+- [x] Listagem de faixas e playlists
+- [x] Interface responsiva para dispositivos móveis e desktop
 
 ---
 
-## 🔧 Como Rodar o Projeto Localmente
+## 🛠️ Tecnologias Utilizadas
+
+- **Frontend:** HTML5, CSS3, JavaScript / TypeScript (ou React, se aplicável)
+- **Backend / APIs:** Node.js (ou integração com APIs de música)
+- **Ferramentas:** Git, VS Code
+
+---
+
+## ⚙️ Como Executar Localmente
 
 ### Pré-requisitos
-- Node.js instalado (v18+)
-- Git
+Antes de começar, você precisará ter instalado em sua máquina:
+- [Git](https://git-scm.com)
+- [Node.js](https://nodejs.org/) (se o seu projeto utilizar gerenciador de pacotes)
 
 ### Passo a passo
 
-1. **Clone o repositório:**
+1. **Clone este repositório:**
    ```bash
-   git clone [https://github.com/osujo/stream-music.git](https://github.com/osujo/stream-music.git)
-   cd stream-music
+   git clone [https://github.com/Oirvingg/stream-music.git](https://github.com/Oirvingg/stream-music.git)
