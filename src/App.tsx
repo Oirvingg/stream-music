@@ -32,7 +32,7 @@ function App() {
         <Sidebar />
 
         {/* Right content column */}
-        <div className="flex-1 flex flex-col overflow-hidden">
+        <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
           <Header />
           {!activePlaylistId && activePage === 'EXPLORE' ? <Explore /> : !activePlaylistId && activePage === 'LIBRARY' ? <Library /> : <Home />}
         </div>

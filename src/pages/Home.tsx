@@ -105,8 +105,8 @@ export function Home() {
 
   if (activePlaylist) {
     return (
-      <main className="flex-1 flex flex-col overflow-hidden relative">
-        <div className="flex-1 overflow-y-auto px-3 md:px-6 py-8">
+      <main className="flex-1 min-h-0 flex flex-col overflow-hidden relative">
+        <div className="flex-1 min-h-0 overflow-y-auto px-3 md:px-6 py-8">
           <div className="flex items-end justify-between mb-8">
             <div>
               <h1 className="text-4xl font-bold text-white mb-2">{activePlaylist.name}</h1>
@@ -222,8 +222,8 @@ export function Home() {
   }
 
   return (
-    <main className="flex-1 flex flex-col overflow-hidden">
-      <div className="flex-1 overflow-y-auto px-3 md:px-6 pb-32 md:pb-4">
+    <main className="flex-1 min-h-0 flex flex-col overflow-hidden">
+      <div className="flex-1 min-h-0 overflow-y-auto px-3 md:px-6 pb-32 md:pb-4">
         <div className="flex gap-2 py-4 overflow-x-auto no-scrollbar">
           {CATEGORIES.map((cat, i) => (
             <button

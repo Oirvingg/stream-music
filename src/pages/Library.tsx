@@ -78,8 +78,8 @@ export function Library() {
   };
 
   return (
-    <main className="flex-1 flex flex-col overflow-y-auto px-3 md:px-6 py-6 pb-40 md:pb-12 text-white no-scrollbar select-none">
-      <div className="flex items-center justify-between mb-6">
+    <main className="flex-1 min-h-0 flex flex-col overflow-hidden px-3 md:px-6 pt-6 text-white no-scrollbar select-none">
+      <div className="flex items-center justify-between mb-6 shrink-0">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-full bg-red-600/20 flex items-center justify-center text-red-500">
             <LibraryIcon className="w-5 h-5" />
@@ -102,7 +102,7 @@ export function Library() {
         </button>
       </div>
 
-      <div className="flex gap-2 mb-8 overflow-x-auto no-scrollbar pb-1">
+      <div className="flex gap-2 mb-8 overflow-x-auto no-scrollbar pb-1 shrink-0">
         {TABS.map((tab) => {
           const count = tabCounts[tab.id];
           const isActive = activeTab === tab.id;
@@ -124,69 +124,71 @@ export function Library() {
         })}
       </div>
 
-      {showFavorites && (
-        <section className="mb-10">
-          <h2 className="text-base md:text-[22px] font-semibold text-white mb-4 flex items-center gap-2">
-            <Heart className="w-5 h-5 text-red-500 fill-red-500" />
-            Músicas curtidas
-          </h2>
+      <div className="flex-1 min-h-0 overflow-y-auto pb-40 md:pb-12">
+        {showFavorites && (
+          <section className="mb-10">
+            <h2 className="text-base md:text-[22px] font-semibold text-white mb-4 flex items-center gap-2">
+              <Heart className="w-5 h-5 text-red-500 fill-red-500" />
+              Músicas curtidas
+            </h2>
 
-          {likedTracks.length === 0 ? (
+            {likedTracks.length === 0 ? (
+              <EmptyState
+                message="Você ainda não curtiu nenhuma música."
+                hint="Clique no ícone de Like durante a reprodução para adicionar músicas aqui."
+              />
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+                {likedTracks.map((track, idx) => (
+                  <TrackCard
+                    key={`liked-${track.id}-${idx}`}
+                    track={track}
+                    trackList={likedTracks}
+                    onPlay={handlePlayTrack}
+                    onDelete={() => toggleLikeTrack(track)}
+                  />
+                ))}
+              </div>
+            )}
+          </section>
+        )}
+
+        {showPlaylists && (
+          <section className="mb-10">
+            <h2 className="text-base md:text-[22px] font-semibold text-white mb-4 flex items-center gap-2">
+              <LibraryIcon className="w-5 h-5 text-red-500" />
+              Playlists criadas
+            </h2>
+
+            {userPlaylists.length === 0 ? (
+              <EmptyState
+                message="Você ainda não criou nenhuma playlist."
+                hint='Use o botão "Nova playlist" para começar.'
+              />
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+                {userPlaylists.map((pl) => (
+                  <PlaylistCard key={pl.id} playlist={pl} onOpen={handlePlaylistClick} />
+                ))}
+              </div>
+            )}
+          </section>
+        )}
+
+        {showDownloads && (
+          <section className="mb-10">
+            <h2 className="text-base md:text-[22px] font-semibold text-white mb-4 flex items-center gap-2">
+              <Download className="w-5 h-5 text-yt-text-secondary" />
+              Downloads
+            </h2>
+
             <EmptyState
-              message="Você ainda não curtiu nenhuma música."
-              hint="Clique no ícone de Like durante a reprodução para adicionar músicas aqui."
+              message="Nenhum download disponível."
+              hint="Os downloads aparecerão aqui quando você baixar músicas."
             />
-          ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-              {likedTracks.map((track, idx) => (
-                <TrackCard
-                  key={`liked-${track.id}-${idx}`}
-                  track={track}
-                  trackList={likedTracks}
-                  onPlay={handlePlayTrack}
-                  onDelete={() => toggleLikeTrack(track)}
-                />
-              ))}
-            </div>
-          )}
-        </section>
-      )}
-
-      {showPlaylists && (
-        <section className="mb-10">
-          <h2 className="text-base md:text-[22px] font-semibold text-white mb-4 flex items-center gap-2">
-            <LibraryIcon className="w-5 h-5 text-red-500" />
-            Playlists criadas
-          </h2>
-
-          {userPlaylists.length === 0 ? (
-            <EmptyState
-              message="Você ainda não criou nenhuma playlist."
-              hint='Use o botão "Nova playlist" para começar.'
-            />
-          ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-              {userPlaylists.map((pl) => (
-                <PlaylistCard key={pl.id} playlist={pl} onOpen={handlePlaylistClick} />
-              ))}
-            </div>
-          )}
-        </section>
-      )}
-
-      {showDownloads && (
-        <section className="mb-10">
-          <h2 className="text-base md:text-[22px] font-semibold text-white mb-4 flex items-center gap-2">
-            <Download className="w-5 h-5 text-yt-text-secondary" />
-            Downloads
-          </h2>
-
-          <EmptyState
-            message="Nenhum download disponível."
-            hint="Os downloads aparecerão aqui quando você baixar músicas."
-          />
-        </section>
-      )}
+          </section>
+        )}
+      </div>
 
       <PlaylistModal
         isOpen={isModalOpen}

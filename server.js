@@ -7,6 +7,7 @@ import songsRoutes from './routes/songs.js';
 import authRoutes from './routes/auth.js';
 
 const app = express();
+const DEEZER_BASE_URL = 'https://api.deezer.com';
 
 // Middlewares para habilitar CORS e aceitar JSON
 app.use(cors());
@@ -57,6 +58,22 @@ const swaggerOptions = {
 
 const swaggerDocs = swaggerJsdoc(swaggerOptions);
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
+
+// Proxy para o Deezer (contorna bloqueio CORS)
+app.use('/api/deezer', async (req, res) => {
+  const targetPath = req.path || '/';
+  const query = new URLSearchParams(req.query).toString();
+  const url = `${DEEZER_BASE_URL}${targetPath}${query ? `?${query}` : ''}`;
+
+  try {
+    const response = await fetch(url);
+    const data = await response.json();
+    res.status(response.status).json(data);
+  } catch (error) {
+    console.error('Erro ao repassar requisição para o Deezer:', error);
+    res.status(502).json({ error: 'Falha ao buscar dados do Deezer' });
+  }
+});
 
 // Uso das rotas na aplicação
 app.use('/auth', authRoutes);

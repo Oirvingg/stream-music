@@ -25,3 +25,6 @@ yarn-error.log*
 *.njsproj
 *.sln
 *.sw?
+
+# Firebase Admin service account (credenciais sensíveis)
+serviceAccountKey.json

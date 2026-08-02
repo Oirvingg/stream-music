@@ -12,11 +12,13 @@ export interface UserPlaylist {
 
 const DEFAULT_PLAYLISTS: UserPlaylist[] = [
   { id: 'p1', name: 'Meus favoritos', creator: 'Você', tracks: [], pinned: true },
-  { id: 'p2', name: 'Lo-fi Beats', creator: 'Curadoria', tracks: [], pinned: true },
   { id: 'p3', name: 'Rock Clássico', creator: 'Você', tracks: [], pinned: false },
-  { id: 'p4', name: 'Eletrônica Noturna', creator: 'Curadoria', tracks: [], pinned: false },
   { id: 'p5', name: 'Chill Vibes', creator: 'Você', tracks: [], pinned: false },
 ];
+
+// IDs de playlists de "curadoria" fictícias que existiam antes e não devem
+// mais aparecer, mesmo para usuários que já tinham o estado antigo salvo.
+const REMOVED_PLAYLIST_IDS = ['p2', 'p4'];
 
 interface PlayerState {
   currentTrack: Track | null;
@@ -246,6 +248,15 @@ export const usePlayerStore = create<PlayerState>()(
     {
       name: 'stream-music-storage', // chave no localStorage
       partialize: (state) => ({ history: state.history, volume: state.volume, playlists: state.playlists, likedTracks: state.likedTracks }),
+      version: 1,
+      migrate: (persistedState: any, version) => {
+        if (version < 1 && persistedState?.playlists) {
+          persistedState.playlists = persistedState.playlists.filter(
+            (pl: UserPlaylist) => !REMOVED_PLAYLIST_IDS.includes(pl.id)
+          );
+        }
+        return persistedState;
+      },
     }
   )
 );

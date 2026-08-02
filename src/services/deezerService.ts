@@ -7,6 +7,23 @@ const BASE_URL = '/api/deezer';
 /**
  * Mapeia a resposta do Deezer para a nossa interface Track rigorosamente.
  */
+/**
+ * Faz o fetch e tenta parsear a resposta como JSON, tolerando corpos vazios
+ * ou respostas de erro que não sejam JSON válido (ex: proxy fora do ar).
+ */
+const fetchDeezerJson = async (url: string): Promise<any | null> => {
+  const response = await fetch(url);
+  const text = await response.text();
+
+  if (!text) return null;
+
+  try {
+    return JSON.parse(text);
+  } catch {
+    throw new Error(`Resposta inválida do Deezer (status ${response.status})`);
+  }
+};
+
 const mapDeezerTrack = (track: any): Track => ({
   id: String(track.id),
   title: track.title,
@@ -24,10 +41,9 @@ export const searchTracks = async (query: string): Promise<Track[]> => {
   if (!query) return [];
 
   try {
-    const response = await fetch(`${BASE_URL}/search?q=${encodeURIComponent(query)}&limit=20`);
-    const data = await response.json();
+    const data = await fetchDeezerJson(`${BASE_URL}/search?q=${encodeURIComponent(query)}&limit=20`);
 
-    if (!data.data) return [];
+    if (!data?.data) return [];
 
     return data.data.map(mapDeezerTrack);
   } catch (error) {
@@ -42,10 +58,9 @@ export const searchTracks = async (query: string): Promise<Track[]> => {
  */
 export const fetchGlobalTrending = async (): Promise<Track[]> => {
   try {
-    const response = await fetch(`${BASE_URL}/chart/0/tracks?limit=50`);
-    const data = await response.json();
+    const data = await fetchDeezerJson(`${BASE_URL}/chart/0/tracks?limit=50`);
 
-    if (!data.data) return [];
+    if (!data?.data) return [];
 
     return data.data.map(mapDeezerTrack);
   } catch (error) {
@@ -61,24 +76,21 @@ export const fetchGlobalTrending = async (): Promise<Track[]> => {
 export const fetchGenreTracks = async (genreName: string): Promise<Track[]> => {
   try {
     // 1. Pesquisa por uma playlist com o nome do gênero
-    const plResponse = await fetch(`${BASE_URL}/search/playlist?q=${encodeURIComponent(genreName)}&limit=1`);
-    const plData = await plResponse.json();
-    
-    if (plData.data && plData.data.length > 0) {
+    const plData = await fetchDeezerJson(`${BASE_URL}/search/playlist?q=${encodeURIComponent(genreName)}&limit=1`);
+
+    if (plData?.data && plData.data.length > 0) {
       const playlistId = plData.data[0].id;
       // 2. Busca as faixas dessa playlist
-      const tracksResponse = await fetch(`${BASE_URL}/playlist/${playlistId}/tracks?limit=50`);
-      const tracksData = await tracksResponse.json();
-      
-      if (tracksData.data) {
+      const tracksData = await fetchDeezerJson(`${BASE_URL}/playlist/${playlistId}/tracks?limit=50`);
+
+      if (tracksData?.data) {
         return tracksData.data.map(mapDeezerTrack);
       }
     }
-    
+
     // Fallback para pesquisa de texto se não encontrar playlist
-    const fallbackResponse = await fetch(`${BASE_URL}/search?q=${encodeURIComponent(genreName)}&limit=50`);
-    const fallbackData = await fallbackResponse.json();
-    return fallbackData.data ? fallbackData.data.map(mapDeezerTrack) : [];
+    const fallbackData = await fetchDeezerJson(`${BASE_URL}/search?q=${encodeURIComponent(genreName)}&limit=50`);
+    return fallbackData?.data ? fallbackData.data.map(mapDeezerTrack) : [];
   } catch (error) {
     console.error('Erro ao buscar faixas por gênero:', error);
     return [];
