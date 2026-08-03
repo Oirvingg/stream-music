@@ -1,10 +1,11 @@
 import { useRef, useState } from 'react';
-import { ChevronLeft, ChevronRight, MoreVertical, Play, Trash } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ListPlus, MoreVertical, Play, Trash } from 'lucide-react';
 import { usePlayerStore } from '../store/usePlayerStore';
 import { Track } from '../types/music';
 import { TrackContextMenu } from '../components/TrackContextMenu';
 import { TrackCard } from '../components/cards/TrackCard';
 import { PlaylistModal } from '../components/PlaylistModal';
+import { AddTrackToPlaylistModal } from '../components/AddTrackToPlaylistModal';
 import { DraggableTrackRow } from '../components/DraggableTrackRow';
 import { useTrendingTracks, useSearchTracks, usePersonalizedTrendingTracks, useCategories } from '../hooks/useMusicQueries';
 import { useUserPlaylists, useFavoriteTracks, useRenamePlaylist, useDeletePlaylist, useRemoveTrackFromPlaylist, useReorderPlaylistTracks } from '../hooks/useLibraryQueries';
@@ -98,6 +99,7 @@ export function Home() {
   const reorderPlaylistTracks = useReorderPlaylistTracks();
 
   const [renameModalOpen, setRenameModalOpen] = useState(false);
+  const [addSongModalOpen, setAddSongModalOpen] = useState(false);
   const [contextMenu, setContextMenu] = useState<{ track: Track; x: number; y: number } | null>(null);
 
   const activePlaylist = activePlaylistId ? playlists.find(p => p.id === activePlaylistId) : null;
@@ -117,7 +119,14 @@ export function Home() {
               </p>
             </div>
             <div className="flex items-center gap-3">
-              <button 
+              <button
+                onClick={() => setAddSongModalOpen(true)}
+                className="flex items-center gap-2 px-4 py-2 rounded-full bg-red-600 hover:bg-red-700 text-sm font-medium text-white transition-colors"
+              >
+                <ListPlus className="w-4 h-4" />
+                Adicionar músicas
+              </button>
+              <button
                 onClick={() => setRenameModalOpen(true)}
                 className="px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 text-sm font-medium text-white transition-colors"
               >
@@ -138,7 +147,14 @@ export function Home() {
           {activePlaylist.tracks.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 text-yt-text-secondary">
               <p>Nenhuma música nesta playlist ainda.</p>
-              <p className="text-sm">Encontre músicas no Início e adicione-as aqui.</p>
+              <p className="text-sm mb-6">Encontre músicas no Início e adicione-as aqui.</p>
+              <button
+                onClick={() => setAddSongModalOpen(true)}
+                className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-red-600 hover:bg-red-700 text-sm font-medium text-white transition-colors"
+              >
+                <ListPlus className="w-4 h-4" />
+                Adicionar músicas
+              </button>
             </div>
           ) : (
             <div className="flex flex-col gap-2">
@@ -218,6 +234,12 @@ export function Home() {
           initialName={activePlaylist.title}
           onSave={(newName) => renamePlaylist.mutate({ id: activePlaylist.id, title: newName })}
           title="Renomear Playlist"
+        />
+        <AddTrackToPlaylistModal
+          isOpen={addSongModalOpen}
+          onClose={() => setAddSongModalOpen(false)}
+          playlistId={activePlaylist.id}
+          existingTrackIds={activePlaylist.tracks.map((t) => t.id)}
         />
         {contextMenu && (
           <TrackContextMenu 
