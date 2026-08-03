@@ -11,6 +11,8 @@ import {
 } from 'lucide-react';
 import { Track } from '../../types/music';
 import { usePlayerStore } from '../../store/usePlayerStore';
+import { useUserPlaylists, useAddTrackToPlaylist, useToggleFavoriteTrack, useFavoriteTracks } from '../../hooks/useLibraryQueries';
+import { useRequireAuth } from '../../hooks/useRequireAuth';
 import { CardMenuDropdown, CardMenuItem } from '../CardMenuDropdown';
 
 function getArtistLabel(track: Track) {
@@ -41,11 +43,12 @@ export function TrackCard({
     shuffleQueue,
     playNext,
     addToQueue,
-    playlists,
-    addTrackToPlaylist,
-    toggleLikeTrack,
-    likedTracks,
   } = usePlayerStore();
+  const { data: playlists = [] } = useUserPlaylists();
+  const { data: likedTracks = [] } = useFavoriteTracks();
+  const addTrackToPlaylist = useAddTrackToPlaylist();
+  const toggleFavoriteTrack = useToggleFavoriteTrack();
+  const requireAuth = useRequireAuth();
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [menuAnchor, setMenuAnchor] = useState<DOMRect | null>(null);
@@ -111,8 +114,11 @@ export function TrackCard({
         label: 'Salvar na playlist',
         submenu: playlists.map((pl) => ({
           id: pl.id,
-          label: pl.name,
-          onClick: () => addTrackToPlaylist(pl.id, track),
+          label: pl.title,
+          onClick: () => {
+            if (!requireAuth()) return;
+            addTrackToPlaylist.mutate({ playlistId: pl.id, track });
+          },
         })),
       },
       {
@@ -130,7 +136,7 @@ export function TrackCard({
           if (onDelete) {
             onDelete(track);
           } else if (isLiked) {
-            toggleLikeTrack(track);
+            toggleFavoriteTrack.mutate(track);
           } else {
             console.log('[Excluir]', track.title);
           }
@@ -144,6 +150,8 @@ export function TrackCard({
     playlists,
     isPlaying,
     isLiked,
+    requireAuth,
+    toggleFavoriteTrack,
     onDelete,
     setQueue,
     shuffleQueue,
@@ -151,7 +159,6 @@ export function TrackCard({
     playNext,
     addToQueue,
     addTrackToPlaylist,
-    toggleLikeTrack,
   ]);
 
   return (

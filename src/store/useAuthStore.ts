@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { AuthUserData, logoutUser, subscribeToAuthChanges } from '../services/authService';
+import { AuthUserData, logoutUser, restoreSession } from '../services/authService';
 
 export type AuthMode = 'login' | 'register';
 
@@ -58,9 +58,9 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 
   initAuthListener: () => {
-    const unsubscribe = subscribeToAuthChanges((user) => {
+    restoreSession().then((user) => {
       set({ user, isAuthenticated: !!user });
     });
-    return unsubscribe;
+    return () => {};
   },
 }));

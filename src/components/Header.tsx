@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Search, Cast, User, LogOut, LogIn } from 'lucide-react';
 import { usePlayerStore } from '../store/usePlayerStore';
 import { useAuthStore } from '../store/useAuthStore';
@@ -6,8 +6,14 @@ import { useAuthStore } from '../store/useAuthStore';
 export function Header() {
   const [query, setQuery] = useState('');
   const [showUserMenu, setShowUserMenu] = useState(false);
-  const { setSearchQuery } = usePlayerStore();
+  const { searchQuery, setSearchQuery } = usePlayerStore();
   const { user, isAuthenticated, setAuthModalOpen, logout } = useAuthStore();
+
+  // Mantém a caixa de busca em sincronia quando a pesquisa é limpa
+  // externamente (ex: ao clicar em "Início" na barra lateral).
+  useEffect(() => {
+    if (searchQuery === '') setQuery('');
+  }, [searchQuery]);
 
   const handleSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {

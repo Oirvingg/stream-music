@@ -25,6 +25,26 @@ export default defineConfig(({ mode }) => {
           secure: false,
           rewrite: (path) => path.replace(/^\/api\/deezer/, ''),
         },
+        // Rotas do nosso backend (auth, playlists, favoritos, categorias).
+        // Em produção, VITE_API_URL aponta direto para o backend no Render;
+        // em dev local, sem essa env var, o proxy abaixo evita CORS e evita
+        // que o fallback de SPA do Vite responda com index.html no lugar do JSON.
+        '/auth': {
+          target: `http://localhost:${env.PORT || 3000}`,
+          changeOrigin: true,
+        },
+        '/api/playlists': {
+          target: `http://localhost:${env.PORT || 3000}`,
+          changeOrigin: true,
+        },
+        '/api/user': {
+          target: `http://localhost:${env.PORT || 3000}`,
+          changeOrigin: true,
+        },
+        '/api/categories': {
+          target: `http://localhost:${env.PORT || 3000}`,
+          changeOrigin: true,
+        },
       },
     },
   };

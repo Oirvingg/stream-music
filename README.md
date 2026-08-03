@@ -8,7 +8,7 @@ Uma aplicação web moderna de streaming de música, com player em tempo real, b
   <img src="https://img.shields.io/badge/Vite-6.0-646CFF?logo=vite&logoColor=white" alt="Vite" />
   <img src="https://img.shields.io/badge/TailwindCSS-3.4-06B6D4?logo=tailwindcss&logoColor=white" alt="Tailwind CSS" />
   <img src="https://img.shields.io/badge/Node.js-Express%205-339933?logo=node.js&logoColor=white" alt="Node.js" />
-  <img src="https://img.shields.io/badge/Firebase-Auth-FFCA28?logo=firebase&logoColor=black" alt="Firebase" />
+  <img src="https://img.shields.io/badge/PostgreSQL-Database-4169E1?logo=postgresql&logoColor=white" alt="PostgreSQL" />
   <img src="https://img.shields.io/badge/Zustand-State%20Management-orange" alt="Zustand" />
   <img src="https://img.shields.io/badge/License-MIT-green" alt="License" />
 </p>
@@ -37,7 +37,7 @@ Uma aplicação web moderna de streaming de música, com player em tempo real, b
 
 O **Stream Music** é um projeto full-stack pessoal, inspirado na interface do YouTube Music, desenvolvido para colocar em prática habilidades de front-end moderno, gerenciamento de estado, consumo de múltiplas APIs externas e construção de uma API REST própria com autenticação.
 
-A aplicação permite pesquisar músicas em catálogos reais (Deezer e Last.fm), montar e reproduzir playlists, visualizar letras e autenticar-se via e-mail/senha ou Google (Firebase Auth).
+A aplicação permite pesquisar músicas em catálogos reais (Deezer e Last.fm), montar e reproduzir playlists, visualizar letras e autenticar-se via e-mail/senha, com dados persistidos em PostgreSQL.
 
 ## ✨ Demonstração das Funcionalidades
 
@@ -45,7 +45,7 @@ A aplicação permite pesquisar músicas em catálogos reais (Deezer e Last.fm),
 - 🔍 **Busca e descoberta de músicas** — integração com a API pública do **Deezer** (busca e faixas em alta) e com a API do **Last.fm** (trending global).
 - 📃 **Letras de música** — busca automática de letras via API pública de lyrics.
 - 🗂️ **Playlists personalizadas** — criação, edição, exclusão e reordenação de faixas por *drag and drop*.
-- 🔐 **Autenticação de usuários** — cadastro, login com e-mail/senha, login social com Google e recuperação de senha, usando **Firebase Authentication** no front-end e uma **API própria em Node.js/Express** simulando emissão de tokens JWT.
+- 🔐 **Autenticação de usuários** — cadastro, login com e-mail/senha e recuperação de senha, com uma **API própria em Node.js/Express** (bcrypt + JWT) e usuários persistidos em **PostgreSQL**.
 - 📱 **Interface responsiva** — layout adaptado para desktop (sidebar) e mobile (barra de navegação inferior), com modais, dropdowns de contexto e menus de faixa.
 - ⌨️ **Atalhos de teclado globais** — controle do player sem precisar usar o mouse.
 - 📖 **Documentação de API interativa** — Swagger/OpenAPI integrado ao servidor Express.
@@ -62,12 +62,11 @@ A aplicação permite pesquisar músicas em catálogos reais (Deezer e Last.fm),
 
 ### Back-end
 - **Node.js** com **Express 5**
+- **PostgreSQL** (driver `pg`) para persistência de usuários, playlists, favoritos e categorias
+- **bcryptjs** e **jsonwebtoken** para autenticação (hash de senha e emissão/verificação de JWT)
 - **CORS** e **dotenv** para configuração de ambiente
 - **Swagger (swagger-jsdoc + swagger-ui-express)** para documentação interativa da API (OpenAPI 3.0)
-- Estrutura de rotas modular (`/auth` e `/songs`), com simulação de autenticação via JWT
-
-### Autenticação e Serviços em Nuvem
-- **Firebase Authentication** (login com e-mail/senha e Google Provider)
+- Estrutura de rotas modular (`/auth`, `/songs`, `/api/playlists`, `/api/user/favorites`, `/api/categories`)
 
 ### APIs e Integrações Externas
 - **Deezer API** — busca de faixas, prévias de áudio e capas de álbum
@@ -85,8 +84,8 @@ A aplicação permite pesquisar músicas em catálogos reais (Deezer e Last.fm),
 
 O projeto é dividido em duas partes que rodam de forma independente:
 
-1. **Cliente (SPA em React/Vite)** — responsável por toda a interface, reprodução de áudio, chamadas às APIs externas (Deezer, Last.fm, Lyrics.ovh) e autenticação via Firebase.
-2. **Servidor (Node.js/Express)** — expõe uma API REST própria (`/auth` e `/songs`) com documentação Swagger, simulando um backend de autenticação com JWT e um catálogo de músicas em memória.
+1. **Cliente (SPA em React/Vite)** — responsável por toda a interface, reprodução de áudio e chamadas às APIs externas (Deezer, Last.fm, Lyrics.ovh) e à API própria.
+2. **Servidor (Node.js/Express)** — expõe uma API REST própria (`/auth`, `/songs`, `/api/playlists`, `/api/user/favorites`, `/api/categories`) com documentação Swagger, autenticação via JWT e persistência em PostgreSQL.
 
 ```
 ┌────────────────────┐        ┌─────────────────────┐
@@ -96,8 +95,9 @@ O projeto é dividido em duas partes que rodam de forma independente:
           │
           ▼
 ┌────────────────────┐        ┌─────────────────────┐
-│ Firebase Auth        │        │  API própria (Express)│
-│ (login/cadastro)     │        │  /auth  /songs         │
+│  API própria (Express)│──────▶│     PostgreSQL        │
+│  /auth  /songs  /api  │        │ users, playlists,     │
+│                       │        │ favorites, categories │
 └────────────────────┘        └─────────────────────┘
 ```
 
@@ -109,15 +109,25 @@ stream-music-main/
 │   ├── components/       # Componentes de UI (Player, Sidebar, Modais, Cards, etc.)
 │   ├── pages/             # Páginas (Home, Explore, Library, Auth)
 │   ├── hooks/             # Hooks customizados (player de áudio, queries, atalhos de teclado)
-│   ├── services/          # Integrações externas (Deezer, Last.fm, Lyrics, Firebase)
+│   ├── services/          # Integrações externas (Deezer, Last.fm, Lyrics, API própria)
 │   ├── store/              # Estado global com Zustand (player e autenticação)
 │   ├── types/              # Tipagens TypeScript
 │   └── data/                # Dados estáticos/mockados
 ├── routes/
-│   ├── auth.js             # Rotas de autenticação (register, login, google, forgot-password, me)
-│   └── songs.js            # Rotas do catálogo de músicas (CRUD simplificado)
+│   ├── auth.js             # Rotas de autenticação (register, login, forgot-password, me)
+│   ├── playlists.js        # Playlists do usuário (PostgreSQL)
+│   ├── favorites.js        # Faixas favoritas do usuário (PostgreSQL)
+│   ├── categories.js       # Categorias/moods (PostgreSQL)
+│   └── songs.js            # Rotas do catálogo de músicas (CRUD simplificado, em memória)
+├── middleware/
+│   └── authenticate.js     # Middleware que valida o token JWT
+├── scripts/
+│   ├── schema.sql           # Schema das tabelas do PostgreSQL
+│   ├── setup-db.mjs         # Cria/verifica as tabelas (npm run setup-db)
+│   └── seed-postgres.mjs    # Popula a tabela de categorias (npm run seed)
+├── db.js                    # Pool de conexão centralizado com o PostgreSQL
 ├── server.js               # Servidor Express + configuração do Swagger
-├── vite.config.ts          # Configuração do Vite (proxy para API do Deezer)
+├── vite.config.ts          # Configuração do Vite (proxy para API do Deezer e para o backend)
 ├── tailwind.config.js       # Tema customizado do Tailwind
 ├── .env.example              # Modelo de variáveis de ambiente
 └── package.json
@@ -137,12 +147,16 @@ npm install
 
 # 3. Configure as variáveis de ambiente
 cp .env.example .env
-# preencha o arquivo .env com suas chaves (veja a seção abaixo)
+# preencha o arquivo .env com suas chaves e credenciais do PostgreSQL (veja a seção abaixo)
 
-# 4. Rode o front-end (Vite)
+# 4. Crie as tabelas no PostgreSQL e (opcional) popule as categorias
+npm run setup-db
+npm run seed
+
+# 5. Rode o front-end (Vite)
 npm run dev
 
-# 5. (Opcional) Em outro terminal, rode o back-end (Express)
+# 6. Em outro terminal, rode o back-end (Express)
 npm run server
 ```
 
@@ -157,26 +171,27 @@ Crie um arquivo `.env` na raiz do projeto com base no `.env.example`:
 PORT=3000
 JWT_SECRET=sua_chave_secreta
 
-# Configuração do Firebase (Frontend & Backend)
-VITE_FIREBASE_API_KEY=
-VITE_FIREBASE_AUTH_DOMAIN=
-VITE_FIREBASE_PROJECT_ID=
-VITE_FIREBASE_STORAGE_BUCKET=
-VITE_FIREBASE_MESSAGING_SENDER_ID=
-VITE_FIREBASE_APP_ID=
-
 # Configuração do Last.fm
 VITE_LASTFM_API_KEY=
+
+# Configuração do PostgreSQL (Backend)
+DB_USER=
+DB_PASSWORD=
+DB_HOST=
+DB_PORT=
+DB_NAME=
 ```
 
 ## 📜 Scripts Disponíveis
 
-| Comando           | Descrição                                              |
-|-------------------|---------------------------------------------------------|
-| `npm run dev`     | Inicia o front-end em modo de desenvolvimento (Vite)     |
-| `npm run server`  | Inicia o back-end Express (`server.js`)                  |
-| `npm run build`   | Verifica os tipos (`tsc`) e gera o build de produção     |
-| `npm run preview` | Serve o build de produção localmente                      |
+| Comando            | Descrição                                              |
+|--------------------|---------------------------------------------------------|
+| `npm run dev`      | Inicia o front-end em modo de desenvolvimento (Vite)     |
+| `npm run server`   | Inicia o back-end Express (`server.js`)                  |
+| `npm run setup-db` | Cria/verifica as tabelas do PostgreSQL (`scripts/schema.sql`) |
+| `npm run seed`     | Popula a tabela `categories` com dados de exemplo         |
+| `npm run build`    | Verifica os tipos (`tsc`) e gera o build de produção     |
+| `npm run preview`  | Serve o build de produção localmente                      |
 
 ## 📖 Documentação da API
 
@@ -192,9 +207,12 @@ Principais endpoints:
 |----------|--------------------------|----------------------------------------------|
 | `POST`   | `/auth/register`         | Cria uma nova conta de usuário                 |
 | `POST`   | `/auth/login`             | Autentica com e-mail e senha                    |
-| `POST`   | `/auth/google`            | Autentica via Google Provider                    |
 | `POST`   | `/auth/forgot-password`  | Solicita redefinição de senha                    |
 | `GET`    | `/auth/me`                | Retorna dados do usuário autenticado (Bearer)     |
+| `GET`    | `/api/playlists`           | Lista as playlists do usuário autenticado           |
+| `POST`   | `/api/playlists`           | Cria uma nova playlist                               |
+| `GET`    | `/api/user/favorites`     | Lista as faixas favoritas do usuário autenticado      |
+| `GET`    | `/api/categories`          | Lista as categorias/moods                              |
 | `GET`    | `/songs`                   | Lista todas as músicas do catálogo                  |
 | `GET`    | `/songs/:id`               | Retorna uma música específica pelo ID                |
 | `POST`   | `/songs`                   | Adiciona uma nova música ao catálogo                  |
@@ -211,7 +229,7 @@ Principais endpoints:
 
 ## 🗺️ Roadmap
 
-- [ ] Persistência real do catálogo de músicas (banco de dados)
+- [ ] Persistência real do catálogo de músicas em PostgreSQL (hoje ainda em memória)
 - [ ] Upload de faixas próprias
 - [ ] Sistema de curtidas e histórico de reprodução
 - [ ] Testes automatizados (unitários e de integração)

@@ -1,7 +1,8 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { Library as LibraryIcon, Plus, Heart, Download } from 'lucide-react';
 import { usePlayerStore } from '../store/usePlayerStore';
-import { useAuthStore } from '../store/useAuthStore';
+import { useUserPlaylists, useFavoriteTracks, useCreatePlaylist, useToggleFavoriteTrack } from '../hooks/useLibraryQueries';
+import { useRequireAuth } from '../hooks/useRequireAuth';
 import { PlaylistModal } from '../components/PlaylistModal';
 import { TrackCard } from '../components/cards/TrackCard';
 import { PlaylistCard } from '../components/cards/PlaylistCard';
@@ -27,32 +28,25 @@ function EmptyState({ message, hint }: { message: string; hint?: string }) {
 
 export function Library() {
   const {
-    playlists,
-    likedTracks,
     setActivePlaylistId,
     setActivePage,
-    createPlaylist,
     setTrack,
     setQueue,
     currentTrack,
     isPlaying,
     togglePlay,
-    toggleLikeTrack,
   } = usePlayerStore();
 
-  const { user } = useAuthStore();
+  const { data: userPlaylists = [] } = useUserPlaylists();
+  const { data: likedTracks = [] } = useFavoriteTracks();
+  const createPlaylist = useCreatePlaylist();
+  const toggleFavoriteTrack = useToggleFavoriteTrack();
+  const requireAuth = useRequireAuth();
 
   const [activeTab, setActiveTab] = useState<LibraryTab>('ALL');
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const userPlaylists = useMemo(() => {
-    const ownerLabel = user?.displayName ?? 'Você';
-    return playlists.filter(
-      (pl) => pl.creator === ownerLabel || pl.creator === 'Você'
-    );
-  }, [playlists, user?.displayName]);
-
-  const handlePlaylistClick = (playlist: ReturnType<typeof usePlayerStore.getState>['playlists'][0]) => {
+  const handlePlaylistClick = (playlist: { id: string }) => {
     setActivePage('HOME');
     setActivePlaylistId(playlist.id);
   };
@@ -64,6 +58,11 @@ export function Library() {
       setQueue(trackList);
       setTrack(track);
     }
+  };
+
+  const handleNewPlaylistClick = () => {
+    if (!requireAuth()) return;
+    setIsModalOpen(true);
   };
 
   const showFavorites = activeTab === 'ALL' || activeTab === 'FAVORITES';
@@ -93,7 +92,7 @@ export function Library() {
         </div>
 
         <button
-          onClick={() => setIsModalOpen(true)}
+          onClick={handleNewPlaylistClick}
           className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-red-600 hover:bg-red-500 text-white text-xs md:text-sm font-medium transition-all active:scale-95"
         >
           <Plus className="w-4 h-4" />
@@ -145,7 +144,7 @@ export function Library() {
                     track={track}
                     trackList={likedTracks}
                     onPlay={handlePlayTrack}
-                    onDelete={() => toggleLikeTrack(track)}
+                    onDelete={() => toggleFavoriteTrack.mutate(track)}
                   />
                 ))}
               </div>
@@ -194,7 +193,7 @@ export function Library() {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSave={(name) => {
-          createPlaylist(name);
+          createPlaylist.mutate(name);
           setIsModalOpen(false);
         }}
         title="Criar nova playlist"

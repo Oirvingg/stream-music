@@ -11,6 +11,8 @@ import {
 } from 'lucide-react';
 import { Track } from '../types/music';
 import { usePlayerStore } from '../store/usePlayerStore';
+import { useUserPlaylists, useFavoriteTracks, useAddTrackToPlaylist, useToggleFavoriteTrack } from '../hooks/useLibraryQueries';
+import { useRequireAuth } from '../hooks/useRequireAuth';
 
 interface TrackContextMenuProps {
   track: Track;
@@ -29,14 +31,15 @@ export function TrackContextMenu({ track, x, y, onClose, trackList, onDelete }: 
     shuffleQueue,
     playNext,
     addToQueue,
-    playlists,
-    addTrackToPlaylist,
     setQueue,
     togglePlay,
     isPlaying,
-    toggleLikeTrack,
-    likedTracks,
   } = usePlayerStore();
+  const { data: playlists = [] } = useUserPlaylists();
+  const { data: likedTracks = [] } = useFavoriteTracks();
+  const addTrackToPlaylist = useAddTrackToPlaylist();
+  const toggleFavoriteTrack = useToggleFavoriteTrack();
+  const requireAuth = useRequireAuth();
 
   const list = trackList && trackList.length > 0 ? trackList : [track];
   const isLiked = likedTracks.some((t) => t.id === track.id);
@@ -89,7 +92,7 @@ export function TrackContextMenu({ track, x, y, onClose, trackList, onDelete }: 
     if (onDelete) {
       onDelete(track);
     } else if (isLiked) {
-      toggleLikeTrack(track);
+      toggleFavoriteTrack.mutate(track);
     } else {
       console.log('[Excluir]', track.title);
     }
@@ -146,12 +149,13 @@ export function TrackContextMenu({ track, x, y, onClose, trackList, onDelete }: 
                         type="button"
                         onClick={(e) => {
                           e.stopPropagation();
-                          addTrackToPlaylist(pl.id, track);
+                          if (!requireAuth()) return;
+                          addTrackToPlaylist.mutate({ playlistId: pl.id, track });
                           onClose();
                         }}
                         className="flex items-center w-full px-4 py-2.5 text-sm text-white hover:bg-white/10 transition-colors text-left truncate"
                       >
-                        {pl.name}
+                        {pl.title}
                       </button>
                     ))
                   )}

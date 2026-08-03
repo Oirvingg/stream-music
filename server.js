@@ -5,6 +5,10 @@ import swaggerUi from 'swagger-ui-express';
 import swaggerJsdoc from 'swagger-jsdoc';
 import songsRoutes from './routes/songs.js';
 import authRoutes from './routes/auth.js';
+import playlistsRoutes from './routes/playlists.js';
+import favoritesRoutes from './routes/favorites.js';
+import categoriesRoutes from './routes/categories.js';
+import { authenticate } from './middleware/authenticate.js';
 
 const app = express();
 const DEEZER_BASE_URL = 'https://api.deezer.com';
@@ -20,7 +24,7 @@ const swaggerOptions = {
     info: {
       title: 'Stream Music API',
       version: '1.0.0',
-      description: 'API do Stream Music usando Node.js, Express e Firebase Auth',
+      description: 'API do Stream Music usando Node.js, Express e PostgreSQL',
       contact: {
         name: 'Suporte Stream Music',
         url: 'http://localhost:3000',
@@ -78,6 +82,11 @@ app.use('/api/deezer', async (req, res) => {
 // Uso das rotas na aplicação
 app.use('/auth', authRoutes);
 app.use('/songs', songsRoutes);
+
+// Rotas autenticadas via Token JWT — dados reais do usuário no PostgreSQL
+app.use('/api/playlists', authenticate, playlistsRoutes);
+app.use('/api/user/favorites', authenticate, favoritesRoutes);
+app.use('/api/categories', categoriesRoutes);
 
 // Rota inicial de verificação
 app.get('/', (req, res) => {

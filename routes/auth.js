@@ -1,7 +1,25 @@
 import express from 'express';
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
+import { pool } from '../db.js';
+import { authenticate } from '../middleware/authenticate.js';
 
 const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'default_jwt_secret';
+const DEFAULT_PHOTO_URL =
+  'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&h=150&fit=crop';
+
+const toUserResponse = (user) => ({
+  uid: String(user.id),
+  name: user.name,
+  email: user.email,
+  photoURL: user.photo_url || DEFAULT_PHOTO_URL,
+});
+
+const signToken = (user) =>
+  jwt.sign({ uid: String(user.id), email: user.email, name: user.name }, JWT_SECRET, {
+    expiresIn: '7d',
+  });
 
 /**
  * @swagger
@@ -46,16 +64,6 @@ const JWT_SECRET = process.env.JWT_SECRET || 'default_jwt_secret';
  *           description: Senha da conta
  *           example: "senha123"
  *
- *     GoogleAuthRequest:
- *       type: object
- *       required:
- *         - idToken
- *       properties:
- *         idToken:
- *           type: string
- *           description: Token de ID emitido pelo Google Identity Services
- *           example: "eyJhbGciOiJSUzI1NiIsImtpZCI6..."
- *
  *     ForgotPasswordRequest:
  *       type: object
  *       required:
@@ -71,7 +79,7 @@ const JWT_SECRET = process.env.JWT_SECRET || 'default_jwt_secret';
  *       properties:
  *         uid:
  *           type: string
- *           example: "usr_abc123xyz"
+ *           example: "1"
  *         name:
  *           type: string
  *           example: "Carlos Silva"
@@ -118,26 +126,39 @@ const JWT_SECRET = process.env.JWT_SECRET || 'default_jwt_secret';
  *       400:
  *         description: Dados inválidos ou e-mail já cadastrado
  */
-router.post('/register', (req, res) => {
+router.post('/register', async (req, res) => {
   const { name, email, password } = req.body;
 
   if (!email || !password || !name) {
     return res.status(400).json({ message: 'Nome, e-mail e senha são obrigatórios.' });
   }
 
-  const token = `jwt_${JWT_SECRET}_${Date.now()}`;
-  const user = {
-    uid: 'usr_' + Date.now(),
-    name,
-    email,
-    photoURL: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&h=150&fit=crop',
-  };
+  if (password.length < 6) {
+    return res.status(400).json({ message: 'A senha precisa ter pelo menos 6 caracteres.' });
+  }
 
-  res.status(201).json({
-    message: 'Conta criada com sucesso!',
-    token,
-    user,
-  });
+  try {
+    const existing = await pool.query('SELECT id FROM users WHERE email = $1', [email]);
+    if (existing.rows.length > 0) {
+      return res.status(400).json({ message: 'Este e-mail já está sendo utilizado por outra conta.' });
+    }
+
+    const passwordHash = await bcrypt.hash(password, 10);
+    const { rows } = await pool.query(
+      'INSERT INTO users (name, email, password_hash, photo_url) VALUES ($1, $2, $3, $4) RETURNING id, name, email, photo_url',
+      [name.trim(), email, passwordHash, DEFAULT_PHOTO_URL]
+    );
+    const user = rows[0];
+
+    res.status(201).json({
+      message: 'Conta criada com sucesso!',
+      token: signToken(user),
+      user: toUserResponse(user),
+    });
+  } catch (error) {
+    console.error('Erro ao registrar usuário:', error);
+    res.status(500).json({ message: 'Erro ao criar a conta.' });
+  }
 });
 
 /**
@@ -162,70 +183,30 @@ router.post('/register', (req, res) => {
  *       401:
  *         description: E-mail ou senha incorretos
  */
-router.post('/login', (req, res) => {
+router.post('/login', async (req, res) => {
   const { email, password } = req.body;
 
   if (!email || !password) {
     return res.status(400).json({ message: 'E-mail e senha são obrigatórios.' });
   }
 
-  const token = `jwt_${JWT_SECRET}_${Date.now()}`;
-  const user = {
-    uid: 'usr_login_123',
-    name: email.split('@')[0],
-    email,
-    photoURL: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&h=150&fit=crop',
-  };
+  try {
+    const { rows } = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+    const user = rows[0];
 
-  res.json({
-    message: 'Autenticado com sucesso!',
-    token,
-    user,
-  });
-});
+    if (!user || !(await bcrypt.compare(password, user.password_hash))) {
+      return res.status(401).json({ message: 'E-mail ou senha incorretos.' });
+    }
 
-/**
- * @swagger
- * /auth/google:
- *   post:
- *     summary: Autenticar ou cadastrar via Google Provider
- *     tags: [Autenticação]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/GoogleAuthRequest'
- *     responses:
- *       200:
- *         description: Autenticação via Google realizada com sucesso
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/AuthResponse'
- *       400:
- *         description: Token do Google inválido
- */
-router.post('/google', (req, res) => {
-  const { idToken } = req.body;
-
-  if (!idToken) {
-    return res.status(400).json({ message: 'O idToken do Google é obrigatório.' });
+    res.json({
+      message: 'Autenticado com sucesso!',
+      token: signToken(user),
+      user: toUserResponse(user),
+    });
+  } catch (error) {
+    console.error('Erro ao autenticar usuário:', error);
+    res.status(500).json({ message: 'Erro ao autenticar.' });
   }
-
-  const token = `google_jwt_${JWT_SECRET}_${Date.now()}`;
-  const user = {
-    uid: 'google_user_999',
-    name: 'Usuário Google',
-    email: 'usuario.google@gmail.com',
-    photoURL: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&h=150&fit=crop',
-  };
-
-  res.json({
-    message: 'Autenticação via Google efetuada com sucesso!',
-    token,
-    user,
-  });
 });
 
 /**
@@ -246,11 +227,14 @@ router.post('/google', (req, res) => {
  *       400:
  *         description: E-mail não fornecido
  */
-router.post('/forgot-password', (req, res) => {
+router.post('/forgot-password', async (req, res) => {
   const { email } = req.body;
   if (!email) {
     return res.status(400).json({ message: 'O e-mail é obrigatório.' });
   }
+
+  // Sem serviço de e-mail configurado neste projeto — apenas confirma o
+  // recebimento da solicitação (não revela se o e-mail existe ou não).
   res.json({ message: `Instruções enviadas com sucesso para o e-mail: ${email}` });
 });
 
@@ -272,18 +256,23 @@ router.post('/forgot-password', (req, res) => {
  *       401:
  *         description: Não autorizado (Token Ausente ou Inválido)
  */
-router.get('/me', (req, res) => {
-  const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ message: 'Token de autenticação ausente ou inválido.' });
-  }
+router.get('/me', authenticate, async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      'SELECT id, name, email, photo_url FROM users WHERE id = $1',
+      [req.user.uid]
+    );
+    const user = rows[0];
 
-  res.json({
-    uid: 'usr_logged_in_current',
-    name: 'Usuário Ativo Stream Music',
-    email: 'usuario.stream@music.com',
-    photoURL: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&h=150&fit=crop',
-  });
+    if (!user) {
+      return res.status(404).json({ message: 'Usuário não encontrado.' });
+    }
+
+    res.json(toUserResponse(user));
+  } catch (error) {
+    console.error('Erro ao buscar perfil:', error);
+    res.status(500).json({ message: 'Erro ao buscar perfil.' });
+  }
 });
 
 export default router;

@@ -1,10 +1,15 @@
-import { Home, Compass, Library, Plus, Pin } from 'lucide-react';
-import { usePlayerStore, UserPlaylist } from '../store/usePlayerStore';
+import { Home, Compass, Library, Plus } from 'lucide-react';
+import { usePlayerStore } from '../store/usePlayerStore';
+import { UserPlaylist, useUserPlaylists, useCreatePlaylist } from '../hooks/useLibraryQueries';
+import { useRequireAuth } from '../hooks/useRequireAuth';
 import { PlaylistModal } from './PlaylistModal';
 import { useState } from 'react';
 
 export function Sidebar() {
-  const { playlists, setActivePlaylistId, activePlaylistId, createPlaylist, activePage, setActivePage } = usePlayerStore();
+  const { setActivePlaylistId, activePlaylistId, activePage, setActivePage, setSearchQuery } = usePlayerStore();
+  const { data: playlists = [] } = useUserPlaylists();
+  const createPlaylist = useCreatePlaylist();
+  const requireAuth = useRequireAuth();
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const handlePlaylistClick = (playlist: UserPlaylist, e: React.MouseEvent) => {
@@ -15,23 +20,31 @@ export function Sidebar() {
   const handleHomeClick = (e: React.MouseEvent) => {
     e.preventDefault();
     setActivePlaylistId(null);
+    setSearchQuery('');
     setActivePage('HOME');
   };
 
   const handleExploreClick = (e: React.MouseEvent) => {
     e.preventDefault();
     setActivePlaylistId(null);
+    setSearchQuery('');
     setActivePage('EXPLORE');
   };
 
   const handleLibraryClick = (e: React.MouseEvent) => {
     e.preventDefault();
     setActivePlaylistId(null);
+    setSearchQuery('');
     setActivePage('LIBRARY');
   };
 
   const handleCreatePlaylist = (name: string) => {
-    createPlaylist(name);
+    createPlaylist.mutate(name);
+  };
+
+  const handleNewPlaylistClick = () => {
+    if (!requireAuth()) return;
+    setIsModalOpen(true);
   };
 
   return (
@@ -67,7 +80,7 @@ export function Sidebar() {
 
       {/* New playlist button */}
       <div className="px-4">
-        <button onClick={() => setIsModalOpen(true)} className="flex items-center gap-3 w-full px-4 py-2 rounded-full bg-yt-pill hover:bg-yt-surface-hover text-sm text-white font-medium transition-colors">
+        <button onClick={handleNewPlaylistClick} className="flex items-center gap-3 w-full px-4 py-2 rounded-full bg-yt-pill hover:bg-yt-surface-hover text-sm text-white font-medium transition-colors">
           <Plus className="w-4 h-4" />
           Nova playlist
         </button>
@@ -83,12 +96,9 @@ export function Sidebar() {
             className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-colors group ${activePlaylistId === pl.id ? 'bg-white/10' : 'hover:bg-white/5'}`}
           >
             <div className="flex flex-col flex-1 min-w-0">
-              <span className={`text-sm truncate ${activePlaylistId === pl.id ? 'text-white font-medium' : 'text-white/90'}`}>{pl.name}</span>
-              <span className="text-xs text-yt-text-secondary truncate">{pl.creator}</span>
+              <span className={`text-sm truncate ${activePlaylistId === pl.id ? 'text-white font-medium' : 'text-white/90'}`}>{pl.title}</span>
+              <span className="text-xs text-yt-text-secondary truncate">{pl.tracks.length} músicas</span>
             </div>
-            {pl.pinned && (
-              <Pin className="w-3.5 h-3.5 text-yt-text-tertiary opacity-0 group-hover:opacity-100 transition-opacity rotate-45" />
-            )}
           </a>
         ))}
       </div>

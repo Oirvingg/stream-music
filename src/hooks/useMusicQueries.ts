@@ -1,7 +1,16 @@
 import { useQuery } from '@tanstack/react-query';
 import { fetchGlobalTrending, searchTracks, fetchGenreTracks } from '../services/deezerService';
 import { fetchUserTopArtists } from '../services/lastfmService';
+import { fetchCategories } from '../services/categoriesService';
 import { Track } from '../types/music';
+
+export function useCategories() {
+  return useQuery({
+    queryKey: ['categories'],
+    queryFn: fetchCategories,
+    staleTime: 30 * 60 * 1000,
+  });
+}
 
 export function useTrendingTracks() {
   return useQuery({

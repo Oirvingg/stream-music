@@ -2,24 +2,6 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { Track } from '../types/music';
 
-export interface UserPlaylist {
-  id: string;
-  name: string;
-  creator: string;
-  tracks: Track[];
-  pinned?: boolean;
-}
-
-const DEFAULT_PLAYLISTS: UserPlaylist[] = [
-  { id: 'p1', name: 'Meus favoritos', creator: 'Você', tracks: [], pinned: true },
-  { id: 'p3', name: 'Rock Clássico', creator: 'Você', tracks: [], pinned: false },
-  { id: 'p5', name: 'Chill Vibes', creator: 'Você', tracks: [], pinned: false },
-];
-
-// IDs de playlists de "curadoria" fictícias que existiam antes e não devem
-// mais aparecer, mesmo para usuários que já tinham o estado antigo salvo.
-const REMOVED_PLAYLIST_IDS = ['p2', 'p4'];
-
 interface PlayerState {
   currentTrack: Track | null;
   isPlaying: boolean;
@@ -28,15 +10,12 @@ interface PlayerState {
   searchQuery: string;
   setSearchQuery: (query: string) => void;
   history: Track[]; // Histórico das últimas 20 músicas tocadas
-  playlists: UserPlaylist[]; // Playlists do usuário
-  likedTracks: Track[]; // Array global de favoritos
   setTrack: (track: Track) => void;
   togglePlay: () => void;
   setVolume: (volume: number) => void;
   addToQueue: (track: Track) => void;
   setQueue: (tracks: Track[]) => void;
 
-  addPlaylist: (newPlaylist: UserPlaylist) => void;
   currentTime: number;
   duration: number;
   setCurrentTime: (time: number) => void;
@@ -48,23 +27,14 @@ interface PlayerState {
   toggleExpand: () => void;
   setExpandedTab: (tab: 'QUEUE' | 'LYRICS' | 'RELATED') => void;
   playNext: (track: Track) => void;
-  toggleLikeTrack: (track: Track) => void;
   shuffleQueue: () => void;
-  
-  // Gerenciamento de Playlists
-  createPlaylist: (name: string) => void;
-  renamePlaylist: (playlistId: string, newName: string) => void;
-  deletePlaylist: (playlistId: string) => void;
-  addTrackToPlaylist: (playlistId: string, track: Track) => void;
-  removeTrackFromPlaylist: (playlistId: string, trackId: string) => void;
-  reorderPlaylistTracks: (playlistId: string, startIndex: number, endIndex: number) => void;
-  
+
   activePlaylistId: string | null;
   setActivePlaylistId: (id: string | null) => void;
   activePage: 'HOME' | 'EXPLORE' | 'LIBRARY';
   setActivePage: (page: 'HOME' | 'EXPLORE' | 'LIBRARY') => void;
   reorderQueue: (startIndex: number, endIndex: number) => void;
-  
+
   feedbackMessage: string | null;
   setFeedbackMessage: (msg: string | null) => void;
 }
@@ -78,8 +48,6 @@ export const usePlayerStore = create<PlayerState>()(
       queue: [],
       searchQuery: '',
       history: [],
-      playlists: DEFAULT_PLAYLISTS,
-      likedTracks: [],
       currentTime: 0,
       duration: 0,
       isExpanded: false,
@@ -104,67 +72,14 @@ export const usePlayerStore = create<PlayerState>()(
         }),
 
       togglePlay: () => set((state) => ({ isPlaying: !state.isPlaying })),
-      
+
       setVolume: (volume) => set({ volume }),
-      
+
       addToQueue: (track) => set((state) => ({ queue: [...state.queue, track] })),
-      
+
       setQueue: (tracks) => set({ queue: tracks }),
-      
+
       setSearchQuery: (query) => set({ searchQuery: query }),
-
-      addPlaylist: (newPlaylist) => set((state) => ({ playlists: [newPlaylist, ...state.playlists] })),
-
-      createPlaylist: (name) => set((state) => {
-        const newPlaylist: UserPlaylist = {
-          id: `playlist-${Date.now()}`,
-          name,
-          creator: 'Você',
-          tracks: [],
-        };
-        return { playlists: [newPlaylist, ...state.playlists] };
-      }),
-
-      renamePlaylist: (playlistId, newName) => set((state) => ({
-        playlists: state.playlists.map(pl => pl.id === playlistId ? { ...pl, name: newName } : pl)
-      })),
-
-      deletePlaylist: (playlistId) => set((state) => ({
-        playlists: state.playlists.filter(pl => pl.id !== playlistId),
-        activePlaylistId: state.activePlaylistId === playlistId ? null : state.activePlaylistId
-      })),
-
-      addTrackToPlaylist: (playlistId, track) => set((state) => ({
-        playlists: state.playlists.map(pl => {
-          if (pl.id === playlistId) {
-            // Evita duplicatas na mesma playlist
-            if (pl.tracks.some(t => t.id === track.id)) return pl;
-            return { ...pl, tracks: [...pl.tracks, track] };
-          }
-          return pl;
-        })
-      })),
-
-      removeTrackFromPlaylist: (playlistId, trackId) => set((state) => ({
-        playlists: state.playlists.map(pl => {
-          if (pl.id === playlistId) {
-            return { ...pl, tracks: pl.tracks.filter(t => t.id !== trackId) };
-          }
-          return pl;
-        })
-      })),
-
-      reorderPlaylistTracks: (playlistId, startIndex, endIndex) => set((state) => ({
-        playlists: state.playlists.map(pl => {
-          if (pl.id === playlistId) {
-            const newTracks = Array.from(pl.tracks);
-            const [movedTrack] = newTracks.splice(startIndex, 1);
-            newTracks.splice(endIndex, 0, movedTrack);
-            return { ...pl, tracks: newTracks };
-          }
-          return pl;
-        })
-      })),
 
       setActivePlaylistId: (id) => set({ activePlaylistId: id }),
       setActivePage: (page) => set({ activePage: page }),
@@ -192,15 +107,6 @@ export const usePlayerStore = create<PlayerState>()(
 
       setFeedbackMessage: (msg) => set({ feedbackMessage: msg }),
 
-      toggleLikeTrack: (track) => set((state) => {
-        const exists = state.likedTracks.some(t => t.id === track.id);
-        if (exists) {
-          return { likedTracks: state.likedTracks.filter(t => t.id !== track.id) };
-        } else {
-          return { likedTracks: [...state.likedTracks, track] };
-        }
-      }),
-
       shuffleQueue: () => set((state) => {
         const newQueue = [...state.queue];
         for (let i = newQueue.length - 1; i > 0; i--) {
@@ -211,7 +117,7 @@ export const usePlayerStore = create<PlayerState>()(
       }),
 
       setCurrentTime: (time) => set({ currentTime: time }),
-      
+
       setDuration: (duration) => set({ duration }),
 
       nextTrack: () => set((state) => {
@@ -219,7 +125,7 @@ export const usePlayerStore = create<PlayerState>()(
         const currentIndex = state.queue.findIndex((t) => t.id === state.currentTrack?.id);
         const nextIndex = (currentIndex + 1) % state.queue.length;
         const nextTrack = state.queue[nextIndex];
-        
+
         return {
           currentTrack: nextTrack,
           isPlaying: true,
@@ -229,15 +135,15 @@ export const usePlayerStore = create<PlayerState>()(
 
       prevTrack: () => set((state) => {
         if (state.queue.length === 0) return state;
-        
+
         if (state.currentTime > 3) {
           return state;
         }
-        
+
         const currentIndex = state.queue.findIndex((t) => t.id === state.currentTrack?.id);
         const prevIndex = currentIndex - 1 < 0 ? state.queue.length - 1 : currentIndex - 1;
         const prevTrack = state.queue[prevIndex];
-        
+
         return {
           currentTrack: prevTrack,
           isPlaying: true,
@@ -247,16 +153,7 @@ export const usePlayerStore = create<PlayerState>()(
     }),
     {
       name: 'stream-music-storage', // chave no localStorage
-      partialize: (state) => ({ history: state.history, volume: state.volume, playlists: state.playlists, likedTracks: state.likedTracks }),
-      version: 1,
-      migrate: (persistedState: any, version) => {
-        if (version < 1 && persistedState?.playlists) {
-          persistedState.playlists = persistedState.playlists.filter(
-            (pl: UserPlaylist) => !REMOVED_PLAYLIST_IDS.includes(pl.id)
-          );
-        }
-        return persistedState;
-      },
+      partialize: (state) => ({ history: state.history, volume: state.volume }),
     }
   )
 );

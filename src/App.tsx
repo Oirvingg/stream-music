@@ -1,4 +1,5 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Sidebar } from './components/Sidebar';
 import { BottomNav } from './components/BottomNav';
 import { Header } from './components/Header';
@@ -16,13 +17,29 @@ function App() {
   useKeyboardShortcuts();
 
   const { activePage, activePlaylistId } = usePlayerStore();
-  const { initAuthListener } = useAuthStore();
+  const { user, initAuthListener } = useAuthStore();
+  const queryClient = useQueryClient();
 
-  // Escuta autenticação do Firebase no carregamento da aplicação
+  // Restaura a sessão salva (token JWT) no carregamento da aplicação
   useEffect(() => {
     const unsubscribe = initAuthListener();
     return () => unsubscribe();
   }, [initAuthListener]);
+
+  // Limpa o cache de playlists/favoritos ao trocar de usuário (logout ou
+  // troca de conta) para nunca exibir dados de outra sessão em flash. Só
+  // limpa quando havia um usuário real antes — a reidratação inicial da
+  // sessão (null -> usuário, ao carregar a página) não deve apagar os dados
+  // que acabaram de ser buscados.
+  const previousUidRef = useRef<string | null>(null);
+  useEffect(() => {
+    const currentUid = user?.uid ?? null;
+    if (previousUidRef.current && previousUidRef.current !== currentUid) {
+      queryClient.removeQueries({ queryKey: ['playlists'] });
+      queryClient.removeQueries({ queryKey: ['favorites'] });
+    }
+    previousUidRef.current = currentUid;
+  }, [user?.uid, queryClient]);
 
   return (
     <div className="h-screen w-full flex flex-col bg-yt-black overflow-hidden relative">

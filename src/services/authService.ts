@@ -1,14 +1,5 @@
-import {
-  signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
-  signInWithPopup,
-  signOut,
-  sendPasswordResetEmail,
-  updateProfile,
-  onAuthStateChanged,
-  User as FirebaseUser,
-} from 'firebase/auth';
-import { auth, googleProvider, setPersistence, browserLocalPersistence, browserSessionPersistence } from './firebase';
+import { apiFetch } from './api';
+import { setToken, clearToken, getToken } from './authToken';
 
 export interface AuthUserData {
   uid: string;
@@ -17,69 +8,40 @@ export interface AuthUserData {
   photoURL: string | null;
 }
 
-export interface AuthError {
-  code: string;
-  message: string;
+interface AuthApiUser {
+  uid: string;
+  name: string;
+  email: string;
+  photoURL: string;
 }
 
-/**
- * Mapeia os códigos de erro do Firebase para mensagens amigáveis em Português.
- */
-export const formatAuthError = (error: any): string => {
-  const code = error?.code || '';
-  switch (code) {
-    case 'auth/invalid-credential':
-    case 'auth/wrong-password':
-    case 'auth/user-not-found':
-      return 'E-mail ou senha incorretos.';
-    case 'auth/email-already-in-use':
-      return 'Este e-mail já está sendo utilizado por outra conta.';
-    case 'auth/weak-password':
-      return 'A senha deve conter pelo menos 6 caracteres.';
-    case 'auth/invalid-email':
-      return 'Por favor, insira um e-mail válido.';
-    case 'auth/popup-closed-by-user':
-      return 'A janela de autenticação do Google foi fechada.';
-    case 'auth/too-many-requests':
-      return 'Muitas tentativas malsucedidas. Tente novamente mais tarde.';
-    case 'auth/network-request-failed':
-      return 'Falha de conexão com a rede. Verifique sua internet.';
-    default:
-      return error?.message || 'Ocorreu um erro ao processar a autenticação.';
-  }
-};
+interface AuthApiResponse {
+  message: string;
+  token: string;
+  user: AuthApiUser;
+}
+
+const toAuthUserData = (user: AuthApiUser): AuthUserData => ({
+  uid: user.uid,
+  email: user.email,
+  displayName: user.name,
+  photoURL: user.photoURL,
+});
 
 /**
  * Realiza o login com E-mail e Senha.
  */
 export const loginWithEmail = async (
   email: string,
-  pass: string,
+  password: string,
   rememberMe: boolean = true
 ): Promise<AuthUserData> => {
-  try {
-    const persistenceMode = rememberMe ? browserLocalPersistence : browserSessionPersistence;
-    await setPersistence(auth, persistenceMode);
-    const userCredential = await signInWithEmailAndPassword(auth, email, pass);
-    const user = userCredential.user;
-    return {
-      uid: user.uid,
-      email: user.email,
-      displayName: user.displayName || email.split('@')[0],
-      photoURL: user.photoURL,
-    };
-  } catch (error: any) {
-    // Se estiver usando chave demo offline ou Firebase não configurado, fallback gracioso
-    if (error?.code?.includes('api-key-not-valid') || error?.code?.includes('invalid-api-key')) {
-      return {
-        uid: 'demo-user-123',
-        email,
-        displayName: email.split('@')[0],
-        photoURL: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&h=150&fit=crop',
-      };
-    }
-    throw new Error(formatAuthError(error));
-  }
+  const response = await apiFetch<AuthApiResponse>('/auth/login', {
+    method: 'POST',
+    body: JSON.stringify({ email, password }),
+  });
+  setToken(response.token, rememberMe);
+  return toAuthUserData(response.user);
 };
 
 /**
@@ -88,100 +50,46 @@ export const loginWithEmail = async (
 export const registerWithEmail = async (
   name: string,
   email: string,
-  pass: string
+  password: string
 ): Promise<AuthUserData> => {
-  try {
-    const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
-    const user = userCredential.user;
-    if (name.trim()) {
-      await updateProfile(user, { displayName: name });
-    }
-    return {
-      uid: user.uid,
-      email: user.email,
-      displayName: name || user.displayName || email.split('@')[0],
-      photoURL: user.photoURL,
-    };
-  } catch (error: any) {
-    if (error?.code?.includes('api-key-not-valid') || error?.code?.includes('invalid-api-key')) {
-      return {
-        uid: 'demo-user-' + Date.now(),
-        email,
-        displayName: name || email.split('@')[0],
-        photoURL: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&h=150&fit=crop',
-      };
-    }
-    throw new Error(formatAuthError(error));
-  }
+  const response = await apiFetch<AuthApiResponse>('/auth/register', {
+    method: 'POST',
+    body: JSON.stringify({ name, email, password }),
+  });
+  setToken(response.token, true);
+  return toAuthUserData(response.user);
 };
 
 /**
- * Realiza a autenticação com a conta do Google.
- */
-export const loginWithGoogle = async (): Promise<AuthUserData> => {
-  try {
-    const userCredential = await signInWithPopup(auth, googleProvider);
-    const user = userCredential.user;
-    return {
-      uid: user.uid,
-      email: user.email,
-      displayName: user.displayName,
-      photoURL: user.photoURL,
-    };
-  } catch (error: any) {
-    if (error?.code?.includes('api-key-not-valid') || error?.code?.includes('invalid-api-key')) {
-      return {
-        uid: 'google-demo-user',
-        email: 'usuario.google@gmail.com',
-        displayName: 'Usuário Google',
-        photoURL: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&h=150&fit=crop',
-      };
-    }
-    throw new Error(formatAuthError(error));
-  }
-};
-
-/**
- * Envia um e-mail de redefinição de senha.
+ * Envia a solicitação de redefinição de senha.
  */
 export const resetPassword = async (email: string): Promise<void> => {
-  try {
-    await sendPasswordResetEmail(auth, email);
-  } catch (error: any) {
-    if (error?.code?.includes('api-key-not-valid') || error?.code?.includes('invalid-api-key')) {
-      return; // Sucesso simulado
-    }
-    throw new Error(formatAuthError(error));
-  }
+  await apiFetch('/auth/forgot-password', {
+    method: 'POST',
+    body: JSON.stringify({ email }),
+  });
 };
 
 /**
- * Desconecta o usuário ativo.
+ * Desconecta o usuário ativo, descartando o token salvo.
  */
 export const logoutUser = async (): Promise<void> => {
-  try {
-    await signOut(auth);
-  } catch (error: any) {
-    console.error('Erro ao fazer logout:', error);
-  }
+  clearToken();
 };
 
 /**
- * Escuta as alterações no estado de autenticação do Firebase.
+ * Verifica se há um token salvo de uma sessão anterior e, se houver, valida
+ * com o backend (`/auth/me`) e retorna os dados do usuário atual. Chamado
+ * uma vez na inicialização do app para restaurar a sessão.
  */
-export const subscribeToAuthChanges = (
-  callback: (user: AuthUserData | null) => void
-): (() => void) => {
-  return onAuthStateChanged(auth, (user: FirebaseUser | null) => {
-    if (user) {
-      callback({
-        uid: user.uid,
-        email: user.email,
-        displayName: user.displayName || user.email?.split('@')[0] || 'Usuário',
-        photoURL: user.photoURL,
-      });
-    } else {
-      callback(null);
-    }
-  });
+export const restoreSession = async (): Promise<AuthUserData | null> => {
+  if (!getToken()) return null;
+
+  try {
+    const user = await apiFetch<AuthApiUser>('/auth/me');
+    return toAuthUserData(user);
+  } catch {
+    clearToken();
+    return null;
+  }
 };

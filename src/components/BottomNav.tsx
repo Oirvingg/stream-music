@@ -3,7 +3,7 @@ import { usePlayerStore } from '../store/usePlayerStore';
 import { useAuthStore } from '../store/useAuthStore';
 
 export function BottomNav() {
-  const { activePage, setActivePage, activePlaylistId, setActivePlaylistId, isExpanded } = usePlayerStore();
+  const { activePage, setActivePage, activePlaylistId, setActivePlaylistId, isExpanded, setSearchQuery } = usePlayerStore();
   const { isAuthenticated, setAuthModalOpen, isAuthModalOpen } = useAuthStore();
 
   // Esconde a barra inferior em modais full screen (como o player expandido)
@@ -11,16 +11,19 @@ export function BottomNav() {
 
   const handleHome = () => {
     setActivePlaylistId(null);
+    setSearchQuery('');
     setActivePage('HOME');
   };
 
   const handleSearch = () => {
     setActivePlaylistId(null);
+    setSearchQuery('');
     setActivePage('EXPLORE');
   };
 
   const handleLibrary = () => {
     setActivePlaylistId(null);
+    setSearchQuery('');
     setActivePage('LIBRARY');
   };
 
@@ -30,6 +33,7 @@ export function BottomNav() {
     } else {
       // Se autenticado, pode abrir modal ou ir para biblioteca
       setActivePlaylistId(null);
+      setSearchQuery('');
       setActivePage('LIBRARY');
     }
   };

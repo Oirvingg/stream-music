@@ -6,13 +6,8 @@ import { TrackContextMenu } from '../components/TrackContextMenu';
 import { TrackCard } from '../components/cards/TrackCard';
 import { PlaylistModal } from '../components/PlaylistModal';
 import { DraggableTrackRow } from '../components/DraggableTrackRow';
-import { useTrendingTracks, useSearchTracks, usePersonalizedTrendingTracks } from '../hooks/useMusicQueries';
-
-const CATEGORIES = [
-  'Podcasts', 'Para treinar', 'Festa', 'Energia',
-  'Relax', 'Romance', 'Triste', 'Positividade',
-  'Foco', 'Sertanejo',
-];
+import { useTrendingTracks, useSearchTracks, usePersonalizedTrendingTracks, useCategories } from '../hooks/useMusicQueries';
+import { useUserPlaylists, useFavoriteTracks, useRenamePlaylist, useDeletePlaylist, useRemoveTrackFromPlaylist, useReorderPlaylistTracks } from '../hooks/useLibraryQueries';
 
 function MusicSectionSkeleton({ title }: { title: string }) {
   return (
@@ -83,17 +78,24 @@ function MusicSection({ title, tracks }: { title: string; tracks: Track[] }) {
 }
 
 export function Home() {
-  const { 
-    searchQuery, activePlaylistId, playlists, 
-    renamePlaylist, deletePlaylist, removeTrackFromPlaylist,
-    setQueue, setTrack, currentTrack, history, likedTracks, togglePlay, setSearchQuery
+  const {
+    searchQuery, activePlaylistId,
+    setQueue, setTrack, currentTrack, history, togglePlay, setSearchQuery
   } = usePlayerStore();
-  
+
   const { data: trendingTracks = [], isLoading: isLoadingTrending, isError: isErrorTrending, refetch: refetchTrending } = useTrendingTracks();
   const { data: searchResults = [], isLoading: isSearching, isError: isErrorSearch, refetch: refetchSearch } = useSearchTracks(searchQuery);
+  const { data: categories = [] } = useCategories();
 
   const lastfmUsername = localStorage.getItem('lastfmUsername');
   const { data: personalizedData, isLoading: isLoadingPersonalized } = usePersonalizedTrendingTracks(history, lastfmUsername);
+
+  const { data: playlists = [] } = useUserPlaylists();
+  const { data: likedTracks = [] } = useFavoriteTracks();
+  const renamePlaylist = useRenamePlaylist();
+  const deletePlaylist = useDeletePlaylist();
+  const removeTrackFromPlaylist = useRemoveTrackFromPlaylist();
+  const reorderPlaylistTracks = useReorderPlaylistTracks();
 
   const [renameModalOpen, setRenameModalOpen] = useState(false);
   const [contextMenu, setContextMenu] = useState<{ track: Track; x: number; y: number } | null>(null);
@@ -109,9 +111,9 @@ export function Home() {
         <div className="flex-1 min-h-0 overflow-y-auto px-3 md:px-6 py-8">
           <div className="flex items-end justify-between mb-8">
             <div>
-              <h1 className="text-4xl font-bold text-white mb-2">{activePlaylist.name}</h1>
+              <h1 className="text-4xl font-bold text-white mb-2">{activePlaylist.title}</h1>
               <p className="text-sm text-yt-text-secondary">
-                {activePlaylist.creator} • {activePlaylist.tracks.length} músicas
+                {activePlaylist.tracks.length} músicas
               </p>
             </div>
             <div className="flex items-center gap-3">
@@ -121,8 +123,11 @@ export function Home() {
               >
                 Renomear
               </button>
-              <button 
-                onClick={() => deletePlaylist(activePlaylist.id)}
+              <button
+                onClick={() => {
+                  deletePlaylist.mutate(activePlaylist.id);
+                  usePlayerStore.getState().setActivePlaylistId(null);
+                }}
                 className="px-4 py-2 rounded-full bg-red-600/20 hover:bg-red-600/40 text-sm font-medium text-red-500 transition-colors"
               >
                 Excluir
@@ -145,7 +150,12 @@ export function Home() {
                   <DraggableTrackRow
                     key={`${track.id}-${idx}`}
                     index={idx}
-                    onReorder={(start, end) => usePlayerStore.getState().reorderPlaylistTracks(activePlaylist.id, start, end)}
+                    onReorder={(start, end) => {
+                      const reordered = Array.from(activePlaylist.tracks);
+                      const [moved] = reordered.splice(start, 1);
+                      reordered.splice(end, 0, moved);
+                      reorderPlaylistTracks.mutate({ playlistId: activePlaylist.id, tracks: reordered });
+                    }}
                     className="flex items-center gap-4 p-2 rounded-md cursor-pointer hover:bg-zinc-800/60 transition-colors group"
                     onClick={(e) => {
                       // Impede que cliques acidentais nos botões propaguem para cá
@@ -187,10 +197,10 @@ export function Home() {
                     >
                       <MoreVertical className="w-5 h-5" />
                     </button>
-                    <button 
+                    <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        removeTrackFromPlaylist(activePlaylist.id, track.id);
+                        removeTrackFromPlaylist.mutate({ playlistId: activePlaylist.id, trackId: track.id });
                       }}
                       className="p-2 opacity-0 group-hover:opacity-100 text-yt-text-secondary hover:text-red-500 transition-all z-10"
                     >
@@ -202,11 +212,11 @@ export function Home() {
             </div>
           )}
         </div>
-        <PlaylistModal 
+        <PlaylistModal
           isOpen={renameModalOpen}
           onClose={() => setRenameModalOpen(false)}
-          initialName={activePlaylist.name}
-          onSave={(newName) => renamePlaylist(activePlaylist.id, newName)}
+          initialName={activePlaylist.title}
+          onSave={(newName) => renamePlaylist.mutate({ id: activePlaylist.id, title: newName })}
           title="Renomear Playlist"
         />
         {contextMenu && (
@@ -225,16 +235,16 @@ export function Home() {
     <main className="flex-1 min-h-0 flex flex-col overflow-hidden">
       <div className="flex-1 min-h-0 overflow-y-auto px-3 md:px-6 pb-32 md:pb-4">
         <div className="flex gap-2 py-4 overflow-x-auto no-scrollbar">
-          {CATEGORIES.map((cat, i) => (
+          {categories.map((cat, i) => (
             <button
-              key={cat}
+              key={cat.id}
               className={`flex-shrink-0 px-4 py-1.5 min-h-[44px] rounded-lg text-xs md:text-sm font-medium transition-colors ${
                 i === 0
                   ? 'bg-white text-yt-black'
                   : 'bg-yt-pill text-white/80 hover:bg-yt-surface-hover'
               }`}
             >
-              {cat}
+              {cat.name}
             </button>
           ))}
         </div>

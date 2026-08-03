@@ -9,7 +9,8 @@ import {
   Share2,
   Trash2,
 } from 'lucide-react';
-import { UserPlaylist, usePlayerStore } from '../../store/usePlayerStore';
+import { usePlayerStore } from '../../store/usePlayerStore';
+import { UserPlaylist, useDeletePlaylist, useRenamePlaylist } from '../../hooks/useLibraryQueries';
 import { CardMenuDropdown, CardMenuItem } from '../CardMenuDropdown';
 import { PlaylistModal } from '../PlaylistModal';
 
@@ -27,9 +28,9 @@ export function PlaylistCard({ playlist, className = '', onOpen }: PlaylistCardP
     addToQueue,
     togglePlay,
     isPlaying,
-    deletePlaylist,
-    renamePlaylist,
   } = usePlayerStore();
+  const deletePlaylist = useDeletePlaylist();
+  const renamePlaylist = useRenamePlaylist();
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [menuAnchor, setMenuAnchor] = useState<DOMRect | null>(null);
@@ -96,20 +97,20 @@ export function PlaylistCard({ playlist, className = '', onOpen }: PlaylistCardP
         id: 'download',
         icon: Download,
         label: 'Baixar',
-        onClick: () => console.log('[Baixar playlist]', playlist.name),
+        onClick: () => console.log('[Baixar playlist]', playlist.title),
       },
       {
         id: 'share',
         icon: Share2,
         label: 'Compartilhar',
-        onClick: () => console.log('[Compartilhar]', playlist.name),
+        onClick: () => console.log('[Compartilhar]', playlist.title),
       },
       {
         id: 'delete',
         icon: Trash2,
         label: 'Excluir',
         danger: true,
-        onClick: () => deletePlaylist(playlist.id),
+        onClick: () => deletePlaylist.mutate(playlist.id),
       },
     ];
   }, [playlist, isPlaying, setQueue, shuffleQueue, togglePlay, addToQueue, deletePlaylist]);
@@ -121,7 +122,7 @@ export function PlaylistCard({ playlist, className = '', onOpen }: PlaylistCardP
           {playlist.tracks.length > 0 && playlist.tracks[0].coverUrl ? (
             <img
               src={playlist.tracks[0].coverUrl}
-              alt={playlist.name}
+              alt={playlist.title}
               className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
             />
           ) : (
@@ -153,10 +154,10 @@ export function PlaylistCard({ playlist, className = '', onOpen }: PlaylistCardP
         </div>
 
         <p className="text-sm font-medium text-white truncate leading-5 group-hover:text-red-400 transition-colors">
-          {playlist.name}
+          {playlist.title}
         </p>
         <p className="text-xs text-yt-text-secondary truncate leading-4">
-          {playlist.tracks.length} {playlist.tracks.length === 1 ? 'música' : 'músicas'} • {playlist.creator}
+          {playlist.tracks.length} {playlist.tracks.length === 1 ? 'música' : 'músicas'}
         </p>
       </div>
 
@@ -171,8 +172,8 @@ export function PlaylistCard({ playlist, className = '', onOpen }: PlaylistCardP
       <PlaylistModal
         isOpen={renameOpen}
         onClose={() => setRenameOpen(false)}
-        initialName={playlist.name}
-        onSave={(name) => renamePlaylist(playlist.id, name)}
+        initialName={playlist.title}
+        onSave={(name) => renamePlaylist.mutate({ id: playlist.id, title: name })}
         title="Editar playlist"
       />
     </>

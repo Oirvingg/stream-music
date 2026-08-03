@@ -16,7 +16,6 @@ import {
 import {
   loginWithEmail,
   registerWithEmail,
-  loginWithGoogle,
   resetPassword,
 } from '../../services/authService';
 import { useAuthStore } from '../../store/useAuthStore';
@@ -50,7 +49,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen: propIsOpen, onClos
 
   // Estados de UI e feedback
   const [loading, setLoading] = useState(false);
-  const [googleLoading, setGoogleLoading] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [isResetPasswordView, setIsResetPasswordView] = useState(false);
   const [resetSuccessMessage, setResetSuccessMessage] = useState<string | null>(null);
@@ -131,22 +129,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen: propIsOpen, onClos
       setFormError(err.message || 'Ocorreu um erro na autenticação.');
     } finally {
       setLoading(false);
-    }
-  };
-
-  // Login com Google
-  const handleGoogleLogin = async () => {
-    setFormError(null);
-    setGoogleLoading(true);
-    try {
-      const userData = await loginWithGoogle();
-      setUser(userData);
-      handleClose();
-      resetFields();
-    } catch (err: any) {
-      setFormError(err.message || 'Não foi possível autenticar com o Google.');
-    } finally {
-      setGoogleLoading(false);
     }
   };
 
@@ -396,53 +378,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen: propIsOpen, onClos
                 ← Voltar para o Login
               </button>
             </div>
-          )}
-
-          {/* Divisor para Login Social */}
-          {!isResetPasswordView && (
-            <>
-              <div className="relative flex items-center justify-center my-5">
-                <div className="border-t border-white/10 w-full" />
-                <span className="bg-[#121212] px-3 text-[11px] uppercase tracking-wider text-yt-text-tertiary">
-                  ou continue com
-                </span>
-                <div className="border-t border-white/10 w-full" />
-              </div>
-
-              {/* Botão de Autenticação com o Google */}
-              <button
-                type="button"
-                onClick={handleGoogleLogin}
-                disabled={googleLoading}
-                className="w-full h-11 bg-[#1a1a1a] hover:bg-[#252525] border border-white/10 rounded-xl text-sm font-medium text-white transition-all flex items-center justify-center gap-3 active:scale-[0.99] disabled:opacity-60"
-              >
-                {googleLoading ? (
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                ) : (
-                  <>
-                    <svg className="w-4 h-4" viewBox="0 0 24 24">
-                      <path
-                        fill="#EA4335"
-                        d="M12 5c1.6 0 3 .6 4.1 1.6l3.1-3.1C17.3 1.7 14.8 1 12 1 7.5 1 3.7 3.6 1.9 7.3l3.7 2.9C6.5 7.1 9 5 12 5z"
-                      />
-                      <path
-                        fill="#4285F4"
-                        d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.5c-.3 1.5-1.1 2.8-2.4 3.7l3.7 2.9c2.2-2 3.7-5 3.7-8.8z"
-                      />
-                      <path
-                        fill="#FBBC05"
-                        d="M5.6 14.8c-.3-.8-.4-1.8-.4-2.8s.1-2 .4-2.8L1.9 6.3C.7 8.7 0 10.3 0 12s.7 3.3 1.9 5.7l3.7-2.9z"
-                      />
-                      <path
-                        fill="#34A853"
-                        d="M12 23c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3 0-5.5-2.1-6.4-5.2L1.9 16C3.7 19.7 7.5 23 12 23z"
-                      />
-                    </svg>
-                    <span>Continuar com o Google</span>
-                  </>
-                )}
-              </button>
-            </>
           )}
         </form>
       </div>
