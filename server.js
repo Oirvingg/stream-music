@@ -14,7 +14,19 @@ const app = express();
 const DEEZER_BASE_URL = 'https://api.deezer.com';
 
 // Middlewares para habilitar CORS e aceitar JSON
-app.use(cors());
+// CORS_ORIGIN (ou FRONTEND_URL) deve conter a(s) URL(s) do frontend em produção
+// (ex: https://meu-frontend.onrender.com), separadas por vírgula se houver mais de uma.
+// Sem essa variável definida, aceita qualquer origem (comportamento de dev local).
+const allowedOrigins = (process.env.CORS_ORIGIN || process.env.FRONTEND_URL || '')
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
+app.use(
+  cors({
+    origin: allowedOrigins.length > 0 ? allowedOrigins : true,
+  })
+);
 app.use(express.json());
 
 // Configurações do Swagger / OpenAPI 3.0
