@@ -3,7 +3,7 @@ import { Track } from '../types/music';
 // Em desenvolvimento (sem VITE_API_URL definida), usamos o proxy local do
 // vite.config.ts para evitar CORS. Em produção, apontamos para o backend
 // deployado no Render, que expõe a mesma rota /api/deezer como proxy do Deezer.
-const API_URL = process.env.VITE_API_URL || import.meta.env.VITE_API_URL || '';
+const API_URL = import.meta.env.VITE_API_URL || '';
 const BASE_URL = `${API_URL}/api/deezer`;
 
 /**

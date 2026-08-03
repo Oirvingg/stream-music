@@ -2,7 +2,7 @@ import { getToken } from './authToken';
 
 // Em desenvolvimento, sem VITE_API_URL definida, as chamadas ficam relativas
 // (mesmo host do Vite). Em produção, aponta para o backend no Render.
-const RAW_API_URL = process.env.VITE_API_URL || import.meta.env.VITE_API_URL || '';
+const RAW_API_URL = import.meta.env.VITE_API_URL || '';
 export const API_URL = RAW_API_URL.replace(/\/+$/, '');
 
 /**
