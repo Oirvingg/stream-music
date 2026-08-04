@@ -8,33 +8,42 @@ import { Home } from './pages/Home';
 import { Explore } from './pages/Explore';
 import { Library } from './pages/Library';
 import { ArtistPage } from './pages/ArtistPage';
+import { AlbumPage } from './pages/AlbumPage';
+import { PlaylistPage } from './pages/PlaylistPage';
 import { AuthModal } from './components/auth/AuthModal';
 import { usePlayerStore } from './store/usePlayerStore';
 import { useAuthStore } from './store/useAuthStore';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
-import { getArtistIdFromPath } from './utils/navigation';
+import { getArtistIdFromPath, getAlbumIdFromPath, getPlaylistIdFromPath } from './utils/navigation';
 
 function App() {
   // Instancia atalhos globais de teclado
   useKeyboardShortcuts();
 
-  const { activePage, activePlaylistId, activeArtistId, setActiveArtistId } = usePlayerStore();
+  const {
+    activePage, activePlaylistId, activeArtistId, activeAlbumId, activePublicPlaylistId,
+    setActiveArtistId, setActiveAlbumId, setActivePublicPlaylistId,
+  } = usePlayerStore();
   const { user, initAuthListener } = useAuthStore();
   const queryClient = useQueryClient();
 
-  // Sincroniza o estado do artista ativo com a URL (/artist/:id), tanto ao
-  // carregar/atualizar a página diretamente nesse link quanto ao navegar
-  // com os botões voltar/avançar do navegador.
+  // Sincroniza as páginas de detalhe (artista/álbum/playlist) com a URL
+  // (/artist/:id, /album/:id, /playlist/:id), tanto ao carregar/atualizar a
+  // página diretamente nesses links quanto ao navegar com os botões
+  // voltar/avançar do navegador.
   useEffect(() => {
-    setActiveArtistId(getArtistIdFromPath(window.location.pathname));
-
-    const handlePopState = () => {
-      setActiveArtistId(getArtistIdFromPath(window.location.pathname));
+    const syncFromPath = () => {
+      const pathname = window.location.pathname;
+      setActiveArtistId(getArtistIdFromPath(pathname));
+      setActiveAlbumId(getAlbumIdFromPath(pathname));
+      setActivePublicPlaylistId(getPlaylistIdFromPath(pathname));
     };
 
-    window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
-  }, [setActiveArtistId]);
+    syncFromPath();
+
+    window.addEventListener('popstate', syncFromPath);
+    return () => window.removeEventListener('popstate', syncFromPath);
+  }, [setActiveArtistId, setActiveAlbumId, setActivePublicPlaylistId]);
 
   // Restaura a sessão salva (token JWT) no carregamento da aplicação
   useEffect(() => {
@@ -67,7 +76,11 @@ function App() {
         {/* Right content column */}
         <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
           <Header />
-          {activeArtistId ? (
+          {activeAlbumId ? (
+            <AlbumPage albumId={activeAlbumId} />
+          ) : activePublicPlaylistId ? (
+            <PlaylistPage playlistId={activePublicPlaylistId} />
+          ) : activeArtistId ? (
             <ArtistPage artistId={activeArtistId} />
           ) : !activePlaylistId && activePage === 'EXPLORE' ? (
             <Explore />

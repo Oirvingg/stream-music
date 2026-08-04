@@ -38,6 +38,12 @@ interface PlayerState {
   activeArtistId: string | null;
   setActiveArtistId: (id: string | null) => void;
 
+  activeAlbumId: string | null;
+  setActiveAlbumId: (id: string | null) => void;
+
+  activePublicPlaylistId: string | null;
+  setActivePublicPlaylistId: (id: string | null) => void;
+
   feedbackMessage: string | null;
   setFeedbackMessage: (msg: string | null) => void;
 }
@@ -59,6 +65,8 @@ export const usePlayerStore = create<PlayerState>()(
       activePage: 'HOME',
       feedbackMessage: null,
       activeArtistId: null,
+      activeAlbumId: null,
+      activePublicPlaylistId: null,
 
       setTrack: (track) =>
         set((state) => {
@@ -88,6 +96,8 @@ export const usePlayerStore = create<PlayerState>()(
       setActivePlaylistId: (id) => set({ activePlaylistId: id }),
       setActivePage: (page) => set({ activePage: page }),
       setActiveArtistId: (id) => set({ activeArtistId: id }),
+      setActiveAlbumId: (id) => set({ activeAlbumId: id }),
+      setActivePublicPlaylistId: (id) => set({ activePublicPlaylistId: id }),
 
       toggleExpand: () => set((state) => ({ isExpanded: !state.isExpanded })),
       setExpandedTab: (tab) => set({ expandedTab: tab }),

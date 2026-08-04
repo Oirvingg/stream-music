@@ -28,7 +28,7 @@ import {
   useCategories,
 } from '../hooks/useMusicQueries';
 import { useUserPlaylists, useFavoriteTracks, useRenamePlaylist, useDeletePlaylist, useRemoveTrackFromPlaylist, useReorderPlaylistTracks } from '../hooks/useLibraryQueries';
-import { goToArtist } from '../utils/navigation';
+import { goToArtist, goToAlbum, goToPlaylist } from '../utils/navigation';
 
 const SEARCH_FILTERS = ['Tudo', 'Artistas', 'Playlists em destaque', 'Músicas', 'Álbuns', 'Vídeos', 'Podcasts'];
 
@@ -163,7 +163,7 @@ function ArtistGridCard({ artist }: { artist: DeezerArtistSearchResult }) {
 
 function PlaylistGridCard({ playlist, onPlay }: { playlist: DeezerPlaylistSearchResult; onPlay: () => void }) {
   return (
-    <button onClick={onPlay} className="flex flex-col text-left group">
+    <div onClick={() => goToPlaylist(playlist.id)} className="flex flex-col text-left group cursor-pointer">
       <div className="relative aspect-square w-full rounded-md overflow-hidden mb-2 bg-zinc-800">
         {playlist.pictureMedium && (
           <img
@@ -173,32 +173,41 @@ function PlaylistGridCard({ playlist, onPlay }: { playlist: DeezerPlaylistSearch
           />
         )}
         <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity duration-200">
-          <div className="w-12 h-12 rounded-full bg-black/60 flex items-center justify-center ring-1 ring-white/20">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onPlay();
+            }}
+            className="w-12 h-12 rounded-full bg-black/60 flex items-center justify-center ring-1 ring-white/20 hover:scale-105 transition-transform"
+          >
             <Play className="w-5 h-5 fill-white text-white ml-0.5" />
-          </div>
+          </button>
         </div>
       </div>
       <p className="text-sm font-medium text-white truncate leading-5">{playlist.title}</p>
       <p className="text-xs text-yt-text-secondary truncate leading-4">
         {playlist.nbTracks} músicas{playlist.creatorName ? ` • ${playlist.creatorName}` : ''}
       </p>
-    </button>
+    </div>
   );
 }
 
 function AlbumGridCard({
+  albumId,
   coverUrl,
   title,
   subtitle,
   onPlay,
 }: {
+  albumId: string;
   coverUrl: string;
   title: string;
   subtitle: string;
   onPlay: () => void;
 }) {
   return (
-    <button onClick={onPlay} className="flex flex-col text-left group">
+    <div onClick={() => goToAlbum(albumId)} className="flex flex-col text-left group cursor-pointer">
       <div className="relative aspect-square w-full rounded-md overflow-hidden mb-2 bg-zinc-800">
         {coverUrl && (
           <img
@@ -208,14 +217,21 @@ function AlbumGridCard({
           />
         )}
         <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity duration-200">
-          <div className="w-12 h-12 rounded-full bg-black/60 flex items-center justify-center ring-1 ring-white/20">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onPlay();
+            }}
+            className="w-12 h-12 rounded-full bg-black/60 flex items-center justify-center ring-1 ring-white/20 hover:scale-105 transition-transform"
+          >
             <Play className="w-5 h-5 fill-white text-white ml-0.5" />
-          </div>
+          </button>
         </div>
       </div>
       <p className="text-sm font-medium text-white truncate leading-5">{title}</p>
       <p className="text-xs text-yt-text-secondary truncate leading-4">{subtitle}</p>
-    </button>
+    </div>
   );
 }
 
@@ -384,6 +400,7 @@ function SearchResults({ query, searchResults, isSearchingTracks }: { query: str
             {albumsForGrid.map((a) => (
               <AlbumGridCard
                 key={a.id}
+                albumId={a.id}
                 coverUrl={a.coverUrl}
                 title={a.title}
                 subtitle={a.subtitle}

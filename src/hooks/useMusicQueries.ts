@@ -11,6 +11,8 @@ import {
   fetchArtistTopTracks,
   fetchArtistAlbums,
   fetchRelatedArtists,
+  fetchAlbumDetails,
+  fetchPlaylistDetails,
 } from '../services/deezerService';
 import { fetchUserTopArtists, fetchArtistInfo } from '../services/lastfmService';
 import { fetchCategories } from '../services/categoriesService';
@@ -224,5 +226,30 @@ export function useArtistRelated(artistId: string | null) {
     queryFn: () => fetchRelatedArtists(artistId!),
     enabled: !!artistId,
     staleTime: 30 * 60 * 1000,
+  });
+}
+
+/**
+ * Metadados completos e faixas de um álbum, para a página de detalhes.
+ */
+export function useAlbumDetails(albumId: string | null) {
+  return useQuery({
+    queryKey: ['albumDetails', albumId],
+    queryFn: () => fetchAlbumDetails(albumId!),
+    enabled: !!albumId,
+    staleTime: 30 * 60 * 1000,
+  });
+}
+
+/**
+ * Metadados completos e faixas de uma playlist pública, para a página de
+ * detalhes. Stale time menor que álbuns pois playlists mudam com frequência.
+ */
+export function usePlaylistDetails(playlistId: string | null) {
+  return useQuery({
+    queryKey: ['playlistDetails', playlistId],
+    queryFn: () => fetchPlaylistDetails(playlistId!),
+    enabled: !!playlistId,
+    staleTime: 10 * 60 * 1000,
   });
 }

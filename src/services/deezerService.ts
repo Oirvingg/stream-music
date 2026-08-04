@@ -348,6 +348,44 @@ export const fetchPlaylistTracks = async (playlistId: string, limit = 50): Promi
   }
 };
 
+export interface PlaylistDetails {
+  id: string;
+  title: string;
+  pictureXl: string;
+  creatorName: string;
+  nbTracks: number;
+  /** Duração total da playlist em segundos. */
+  duration: number;
+  tracks: Track[];
+}
+
+/**
+ * Busca os metadados completos de uma playlist pública (capa, criador,
+ * duração total) junto com todas as suas faixas, para a página de detalhes.
+ */
+export const fetchPlaylistDetails = async (playlistId: string): Promise<PlaylistDetails | null> => {
+  try {
+    const data = await fetchDeezerJson(`${BASE_URL}/playlist/${playlistId}`);
+    if (!data || data.error) return null;
+
+    const items: any[] = data.tracks?.data || [];
+    const tracks: Track[] = items.map(mapDeezerTrack);
+
+    return {
+      id: String(data.id),
+      title: data.title || 'Playlist',
+      pictureXl: data.picture_xl || data.picture_big || data.picture_medium || '',
+      creatorName: data.creator?.name || data.user?.name || '',
+      nbTracks: data.nb_tracks || tracks.length,
+      duration: data.duration || tracks.reduce((sum, t) => sum + (t.duration || 0), 0),
+      tracks,
+    };
+  } catch (error) {
+    console.error('Erro ao buscar detalhes da playlist:', error);
+    return null;
+  }
+};
+
 /**
  * Busca artistas parecidos/relacionados a um artista.
  */
@@ -383,5 +421,54 @@ export const fetchAlbumTracks = async (albumId: string): Promise<Track[]> => {
   } catch (error) {
     console.error('Erro ao buscar faixas do álbum:', error);
     return [];
+  }
+};
+
+export interface AlbumDetails {
+  id: string;
+  title: string;
+  coverXl: string;
+  artistId: string;
+  artistName: string;
+  releaseYear: string;
+  nbTracks: number;
+  /** Duração total do álbum em segundos. */
+  duration: number;
+  tracks: Track[];
+}
+
+/**
+ * Busca os metadados completos de um álbum (capa, artista, ano, duração
+ * total) junto com todas as suas faixas, para a página de detalhes do álbum.
+ */
+export const fetchAlbumDetails = async (albumId: string): Promise<AlbumDetails | null> => {
+  try {
+    const data = await fetchDeezerJson(`${BASE_URL}/album/${albumId}`);
+    if (!data || data.error) return null;
+
+    const coverUrl = data.cover_xl || data.cover_medium || data.cover || '';
+    const albumTitle = data.title || 'Unknown Album';
+    const items: any[] = data.tracks?.data || [];
+
+    const tracks: Track[] = items.map((track) => ({
+      ...mapDeezerTrack(track),
+      album: albumTitle,
+      coverUrl,
+    }));
+
+    return {
+      id: String(data.id),
+      title: albumTitle,
+      coverXl: coverUrl,
+      artistId: data.artist ? String(data.artist.id) : '',
+      artistName: data.artist?.name || '',
+      releaseYear: data.release_date ? String(data.release_date).slice(0, 4) : '',
+      nbTracks: data.nb_tracks || tracks.length,
+      duration: data.duration || tracks.reduce((sum, t) => sum + (t.duration || 0), 0),
+      tracks,
+    };
+  } catch (error) {
+    console.error('Erro ao buscar detalhes do álbum:', error);
+    return null;
   }
 };

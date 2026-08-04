@@ -4,7 +4,7 @@ import { usePlayerStore } from '../store/usePlayerStore';
 import { Track } from '../types/music';
 import { useArtistDetails, useArtistTopTracks, useArtistAlbums, useArtistRelated } from '../hooks/useMusicQueries';
 import { fetchAlbumTracks, DeezerAlbum, DeezerArtistSummary } from '../services/deezerService';
-import { goToArtist, goBackFromArtist } from '../utils/navigation';
+import { goToArtist, goBackFromArtist, goToAlbum } from '../utils/navigation';
 import { TrackContextMenu } from '../components/TrackContextMenu';
 
 const FOLLOWED_ARTISTS_KEY = 'followedArtistIds';
@@ -306,7 +306,7 @@ export function ArtistPage({ artistId }: ArtistPageProps) {
 
 function AlbumCard({ album, onPlay }: { album: DeezerAlbum; onPlay: () => void }) {
   return (
-    <button onClick={onPlay} className="flex-shrink-0 w-[170px] text-left group">
+    <div onClick={() => goToAlbum(album.id)} className="flex-shrink-0 w-[170px] text-left group cursor-pointer">
       <div className="relative aspect-square w-full rounded-md overflow-hidden mb-2">
         <img
           src={album.coverXl}
@@ -314,14 +314,21 @@ function AlbumCard({ album, onPlay }: { album: DeezerAlbum; onPlay: () => void }
           className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
         />
         <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity duration-200">
-          <div className="w-12 h-12 rounded-full bg-black/60 flex items-center justify-center ring-1 ring-white/20">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onPlay();
+            }}
+            className="w-12 h-12 rounded-full bg-black/60 flex items-center justify-center ring-1 ring-white/20 hover:scale-105 transition-transform"
+          >
             <Play className="w-5 h-5 fill-white text-white ml-0.5" />
-          </div>
+          </button>
         </div>
       </div>
       <p className="text-sm font-medium text-white truncate leading-5">{album.title}</p>
       <p className="text-xs text-yt-text-secondary truncate leading-4">{album.releaseYear}</p>
-    </button>
+    </div>
   );
 }
 
