@@ -11,9 +11,9 @@ import {
 } from 'lucide-react';
 import { Track } from '../../types/music';
 import { usePlayerStore } from '../../store/usePlayerStore';
-import { useUserPlaylists, useAddTrackToPlaylist, useToggleFavoriteTrack, useFavoriteTracks } from '../../hooks/useLibraryQueries';
-import { useRequireAuth } from '../../hooks/useRequireAuth';
+import { useToggleFavoriteTrack, useFavoriteTracks } from '../../hooks/useLibraryQueries';
 import { CardMenuDropdown, CardMenuItem } from '../CardMenuDropdown';
+import { SaveToPlaylistModal } from '../SaveToPlaylistModal';
 
 function getArtistLabel(track: Track) {
   return typeof track.artist === 'string' ? track.artist : track.artist.name;
@@ -44,14 +44,12 @@ export function TrackCard({
     playNext,
     addToQueue,
   } = usePlayerStore();
-  const { data: playlists = [] } = useUserPlaylists();
   const { data: likedTracks = [] } = useFavoriteTracks();
-  const addTrackToPlaylist = useAddTrackToPlaylist();
   const toggleFavoriteTrack = useToggleFavoriteTrack();
-  const requireAuth = useRequireAuth();
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [menuAnchor, setMenuAnchor] = useState<DOMRect | null>(null);
+  const [saveModalOpen, setSaveModalOpen] = useState(false);
 
   const isActive = currentTrack?.id === track.id;
   const artistLabel = getArtistLabel(track);
@@ -112,14 +110,7 @@ export function TrackCard({
         id: 'save-playlist',
         icon: Bookmark,
         label: 'Salvar na playlist',
-        submenu: playlists.map((pl) => ({
-          id: pl.id,
-          label: pl.title,
-          onClick: () => {
-            if (!requireAuth()) return;
-            addTrackToPlaylist.mutate({ playlistId: pl.id, track });
-          },
-        })),
+        onClick: () => setSaveModalOpen(true),
       },
       {
         id: 'share',
@@ -147,10 +138,8 @@ export function TrackCard({
   }, [
     track,
     list,
-    playlists,
     isPlaying,
     isLiked,
-    requireAuth,
     toggleFavoriteTrack,
     onDelete,
     setQueue,
@@ -158,7 +147,6 @@ export function TrackCard({
     togglePlay,
     playNext,
     addToQueue,
-    addTrackToPlaylist,
   ]);
 
   return (
@@ -223,6 +211,12 @@ export function TrackCard({
           onClose={() => setMenuOpen(false)}
         />
       )}
+
+      <SaveToPlaylistModal
+        isOpen={saveModalOpen}
+        track={track}
+        onClose={() => setSaveModalOpen(false)}
+      />
     </>
   );
 }

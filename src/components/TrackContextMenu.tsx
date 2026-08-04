@@ -7,12 +7,11 @@ import {
   Download,
   Share2,
   Trash2,
-  ChevronRight,
 } from 'lucide-react';
 import { Track } from '../types/music';
 import { usePlayerStore } from '../store/usePlayerStore';
-import { useUserPlaylists, useFavoriteTracks, useAddTrackToPlaylist, useToggleFavoriteTrack } from '../hooks/useLibraryQueries';
-import { useRequireAuth } from '../hooks/useRequireAuth';
+import { useFavoriteTracks, useToggleFavoriteTrack } from '../hooks/useLibraryQueries';
+import { SaveToPlaylistModal } from './SaveToPlaylistModal';
 
 interface TrackContextMenuProps {
   track: Track;
@@ -25,7 +24,7 @@ interface TrackContextMenuProps {
 
 export function TrackContextMenu({ track, x, y, onClose, trackList, onDelete }: TrackContextMenuProps) {
   const menuRef = useRef<HTMLDivElement>(null);
-  const [showPlaylists, setShowPlaylists] = useState(false);
+  const [saveModalOpen, setSaveModalOpen] = useState(false);
 
   const {
     shuffleQueue,
@@ -35,11 +34,8 @@ export function TrackContextMenu({ track, x, y, onClose, trackList, onDelete }: 
     togglePlay,
     isPlaying,
   } = usePlayerStore();
-  const { data: playlists = [] } = useUserPlaylists();
   const { data: likedTracks = [] } = useFavoriteTracks();
-  const addTrackToPlaylist = useAddTrackToPlaylist();
   const toggleFavoriteTrack = useToggleFavoriteTrack();
-  const requireAuth = useRequireAuth();
 
   const list = trackList && trackList.length > 0 ? trackList : [track];
   const isLiked = likedTracks.some((t) => t.id === track.id);
@@ -104,7 +100,7 @@ export function TrackContextMenu({ track, x, y, onClose, trackList, onDelete }: 
     { icon: PlaySquare, label: 'Tocar a seguir', onClick: handlePlayNext },
     { icon: ListPlus, label: 'Adicionar à fila', onClick: handleAddToQueue },
     { icon: Download, label: 'Baixar', onClick: (e: React.MouseEvent) => { e.stopPropagation(); console.log('[Baixar]', track.title); onClose(); } },
-    { icon: Bookmark, label: 'Salvar na playlist', submenu: true },
+    { icon: Bookmark, label: 'Salvar na playlist', onClick: (e: React.MouseEvent) => { e.stopPropagation(); setSaveModalOpen(true); } },
     { icon: Share2, label: 'Compartilhar', onClick: (e: React.MouseEvent) => { e.stopPropagation(); console.log('[Compartilhar]', track.title); onClose(); } },
     { icon: Trash2, label: 'Excluir', onClick: handleDelete, danger: true },
   ];
@@ -116,69 +112,28 @@ export function TrackContextMenu({ track, x, y, onClose, trackList, onDelete }: 
       className="w-64 bg-[#212121] rounded-md shadow-2xl py-2 border border-white/10 flex flex-col"
       onClick={(e) => e.stopPropagation()}
     >
-      {menuItems.map((item, index) => {
-        if (item.submenu) {
-          return (
-            <div
-              key={index}
-              className="relative"
-              onMouseEnter={() => setShowPlaylists(true)}
-              onMouseLeave={() => setShowPlaylists(false)}
-            >
-              <button
-                type="button"
-                className="flex items-center justify-between w-full px-4 py-3 text-sm text-white hover:bg-white/10 transition-colors text-left font-medium"
-              >
-                <div className="flex items-center gap-4 min-w-0">
-                  <item.icon className="w-5 h-5 text-white/70 shrink-0" />
-                  <span className="truncate">{item.label}</span>
-                </div>
-                <ChevronRight className="w-4 h-4 text-white/50 shrink-0 ml-2" />
-              </button>
+      {!saveModalOpen && menuItems.map((item, index) => (
+        <button
+          key={index}
+          type="button"
+          onClick={item.onClick}
+          className={`flex items-center gap-4 w-full px-4 py-3 text-sm hover:bg-white/10 transition-colors text-left font-medium ${
+            item.danger ? 'text-red-400' : 'text-white'
+          }`}
+        >
+          <item.icon className={`w-5 h-5 shrink-0 ${item.danger ? 'text-red-400' : 'text-white/70'}`} />
+          <span className="truncate">{item.label}</span>
+        </button>
+      ))}
 
-              {showPlaylists && (
-                <div
-                  className={`absolute top-0 ${x > window.innerWidth - 450 ? 'right-full mr-1' : 'left-full ml-1'} w-56 bg-[#212121] rounded-md shadow-2xl py-2 border border-white/10 flex flex-col z-[100000]`}
-                >
-                  {playlists.length === 0 ? (
-                    <div className="px-4 py-2 text-sm text-white/70 italic">Nenhuma playlist</div>
-                  ) : (
-                    playlists.map((pl) => (
-                      <button
-                        key={pl.id}
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (!requireAuth()) return;
-                          addTrackToPlaylist.mutate({ playlistId: pl.id, track });
-                          onClose();
-                        }}
-                        className="flex items-center w-full px-4 py-2.5 text-sm text-white hover:bg-white/10 transition-colors text-left truncate"
-                      >
-                        {pl.title}
-                      </button>
-                    ))
-                  )}
-                </div>
-              )}
-            </div>
-          );
-        }
-
-        return (
-          <button
-            key={index}
-            type="button"
-            onClick={item.onClick}
-            className={`flex items-center gap-4 w-full px-4 py-3 text-sm hover:bg-white/10 transition-colors text-left font-medium ${
-              item.danger ? 'text-red-400' : 'text-white'
-            }`}
-          >
-            <item.icon className={`w-5 h-5 shrink-0 ${item.danger ? 'text-red-400' : 'text-white/70'}`} />
-            <span className="truncate">{item.label}</span>
-          </button>
-        );
-      })}
+      <SaveToPlaylistModal
+        isOpen={saveModalOpen}
+        track={track}
+        onClose={() => {
+          setSaveModalOpen(false);
+          onClose();
+        }}
+      />
     </div>
   );
 }
