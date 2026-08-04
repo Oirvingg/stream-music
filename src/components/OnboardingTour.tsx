@@ -1,6 +1,16 @@
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Joyride, EVENTS, STATUS, type EventData, type Step } from 'react-joyride';
 import { useAuthStore } from '../store/useAuthStore';
+
+/**
+ * Prefixo fixo nos logs de diagnóstico do tour — facilita filtrar no console
+ * do navegador (ex: DevTools > Console > filtro "[OnboardingTour]").
+ */
+const LOG_PREFIX = '[OnboardingTour]';
+
+/** Tempo de tolerância após o mount antes de permitir o tour iniciar, para
+ * garantir que o layout (Header, PlayerBar) já tenha assentado. */
+const START_DELAY_MS = 500;
 
 const STEPS: Step[] = [
   {
@@ -34,11 +44,38 @@ const SAVE_TRACK_TARGET = '[data-tour="save-track"]';
 export function OnboardingTour() {
   const { user, isAuthenticated, completeOnboarding } = useAuthStore();
 
-  const run = isAuthenticated && !!user?.isFirstLogin;
+  // Pequena tolerância após o mount: evita que o Joyride tente calcular a
+  // posição do 1º passo antes do layout (Header/PlayerBar) estar assentado.
+  const [appReady, setAppReady] = useState(false);
+  useEffect(() => {
+    console.log(`${LOG_PREFIX} componente montado em App.tsx`);
+    const timer = setTimeout(() => setAppReady(true), START_DELAY_MS);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const run = appReady && isAuthenticated && !!user?.isFirstLogin;
+
+  // Diagnóstico: acompanha o valor de isFirstLogin vindo do backend/store e
+  // se isso resulta (ou não) em run=true para o Joyride.
+  useEffect(() => {
+    console.log(`${LOG_PREFIX} estado atualizado`, {
+      appReady,
+      isAuthenticated,
+      userIsFirstLogin: user?.isFirstLogin,
+      run,
+    });
+    if (isAuthenticated && user?.isFirstLogin === undefined) {
+      console.warn(
+        `${LOG_PREFIX} isFirstLogin veio "undefined" do backend — provável resposta de uma versão` +
+          ' antiga da API (deploy desatualizado no Render), não do frontend.'
+      );
+    }
+  }, [appReady, isAuthenticated, user, run]);
 
   const handleEvent = useCallback(
     (data: EventData) => {
       const { index, type, status } = data;
+      console.log(`${LOG_PREFIX} evento`, { type, status, index, target: STEPS[index]?.target });
 
       // O botão "Salvar na playlist" só fica visível no hover — força sua
       // exibição enquanto esse passo específico estiver ativo (ver index.css).
@@ -48,8 +85,13 @@ export function OnboardingTour() {
         isSaveTrackStep && status === STATUS.RUNNING
       );
 
+      if (type === EVENTS.TARGET_NOT_FOUND) {
+        console.warn(`${LOG_PREFIX} alvo não encontrado no DOM para o passo`, STEPS[index]?.target);
+      }
+
       if (type === EVENTS.TOUR_END && (status === STATUS.FINISHED || status === STATUS.SKIPPED)) {
         document.body.classList.remove('onboarding-step-save-track');
+        console.log(`${LOG_PREFIX} tour concluído/pulado — atualizando isFirstLogin no backend`);
         completeOnboarding();
       }
     },
