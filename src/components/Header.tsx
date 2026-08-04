@@ -2,12 +2,11 @@ import { useEffect, useState } from 'react';
 import { Search, Cast, User, LogOut, LogIn } from 'lucide-react';
 import { usePlayerStore } from '../store/usePlayerStore';
 import { useAuthStore } from '../store/useAuthStore';
-import { goToSearch } from '../utils/navigation';
 
 export function Header() {
   const [query, setQuery] = useState('');
   const [showUserMenu, setShowUserMenu] = useState(false);
-  const { searchQuery, setSearchQuery, activePage } = usePlayerStore();
+  const { searchQuery, setSearchQuery } = usePlayerStore();
   const { user, isAuthenticated, setAuthModalOpen, logout } = useAuthStore();
 
   // Mantém a caixa de busca em sincronia quando a pesquisa é limpa
@@ -28,10 +27,9 @@ export function Header() {
         {/* Left — Empty spacer (apenas desktop, centraliza a busca) */}
         <div className="hidden md:flex w-32 items-center" />
 
-        {/* Center — Search */}
-        <div className="flex-1 min-w-0 md:max-w-[560px] md:mx-auto" data-tour="search-bar">
-          {/* Desktop: campo de busca real */}
-          <div className="relative hidden md:block">
+        {/* Center — Search (apenas desktop; no mobile a busca fica só na Bottom Nav) */}
+        <div className="hidden md:block flex-1 min-w-0 md:max-w-[560px] md:mx-auto" data-tour="search-bar">
+          <div className="relative">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-yt-text-secondary pointer-events-none" />
             <input
               type="text"
@@ -42,20 +40,6 @@ export function Header() {
               className="w-full h-10 pl-12 pr-4 bg-yt-search-bg border border-yt-border/50 rounded-lg text-sm text-white placeholder:text-yt-text-tertiary focus:outline-none focus:border-white/30 transition-colors"
             />
           </div>
-
-          {/* Mobile: atalho que abre a tela dedicada de busca (com teclado focado).
-              Oculto quando já se está na tela de busca, para não duplicar o campo. */}
-          {activePage !== 'SEARCH' && (
-            <button
-              type="button"
-              onClick={() => goToSearch()}
-              aria-label="Buscar"
-              className="flex md:hidden items-center gap-3 w-full h-10 pl-4 pr-4 bg-yt-search-bg border border-yt-border/50 rounded-full text-sm text-yt-text-tertiary active:scale-[0.99] transition-transform"
-            >
-              <Search className="w-4 h-4 shrink-0" />
-              <span className="truncate">Pesquisar músicas, álbuns, artistas...</span>
-            </button>
-          )}
         </div>
 
         {/* Right — Actions & User Profile */}
