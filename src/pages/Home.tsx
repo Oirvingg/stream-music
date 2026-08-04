@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from 'react';
-import { ChevronLeft, ChevronRight, ListPlus, MoreVertical, Music, Play, Shuffle, Trash } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Compass, ListPlus, MoreVertical, Music, Play, Shuffle, Trash } from 'lucide-react';
 import { usePlayerStore } from '../store/usePlayerStore';
 import { Track, getArtistName, getArtistId } from '../types/music';
 import {
@@ -256,7 +256,7 @@ function PodcastGridCard({ podcast }: { podcast: DeezerPodcastSearchResult }) {
   );
 }
 
-function SearchResults({ query, searchResults, isSearchingTracks }: { query: string; searchResults: Track[]; isSearchingTracks: boolean }) {
+export function SearchResults({ query, searchResults, isSearchingTracks }: { query: string; searchResults: Track[]; isSearchingTracks: boolean }) {
   const { setQueue, setTrack, togglePlay, isPlaying, currentTrack, shuffleQueue } = usePlayerStore();
   const [activeFilter, setActiveFilter] = useState('Tudo');
   const [contextMenu, setContextMenu] = useState<{ track: Track; x: number; y: number } | null>(null);
@@ -913,6 +913,19 @@ export function Home() {
       <div className="flex-1 min-h-0 overflow-y-auto px-3 md:px-6 pb-32 md:pb-4">
         {!searchQuery && (
           <div className="flex gap-2 py-4 overflow-x-auto no-scrollbar" data-tour="mood-filters">
+            {/* Atalho para "Explorar" (Gêneros e Momentos) — só no mobile,
+                já que a Sidebar com esse link fica oculta em telas pequenas. */}
+            <button
+              onClick={() => {
+                usePlayerStore.getState().setActivePlaylistId(null);
+                usePlayerStore.getState().setSearchQuery('');
+                usePlayerStore.getState().setActivePage('EXPLORE');
+              }}
+              className="flex md:hidden flex-shrink-0 items-center gap-1.5 px-4 py-1.5 min-h-[44px] rounded-lg text-xs font-medium bg-yt-pill text-white/80 hover:bg-yt-surface-hover transition-colors"
+            >
+              <Compass className="w-3.5 h-3.5" />
+              Explorar
+            </button>
             {categories.map((cat) => (
               <button
                 key={cat.id}

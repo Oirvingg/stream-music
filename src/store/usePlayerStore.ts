@@ -31,8 +31,8 @@ interface PlayerState {
 
   activePlaylistId: string | null;
   setActivePlaylistId: (id: string | null) => void;
-  activePage: 'HOME' | 'EXPLORE' | 'LIBRARY';
-  setActivePage: (page: 'HOME' | 'EXPLORE' | 'LIBRARY') => void;
+  activePage: 'HOME' | 'EXPLORE' | 'LIBRARY' | 'SEARCH';
+  setActivePage: (page: 'HOME' | 'EXPLORE' | 'LIBRARY' | 'SEARCH') => void;
   reorderQueue: (startIndex: number, endIndex: number) => void;
 
   activeArtistId: string | null;

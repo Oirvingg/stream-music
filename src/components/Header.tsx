@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Search, Cast, User, LogOut, LogIn } from 'lucide-react';
 import { usePlayerStore } from '../store/usePlayerStore';
 import { useAuthStore } from '../store/useAuthStore';
+import { goToSearch } from '../utils/navigation';
 
 export function Header() {
   const [query, setQuery] = useState('');
@@ -23,13 +24,14 @@ export function Header() {
 
   return (
     <>
-      <header className="flex items-center justify-between h-16 px-6 bg-transparent shrink-0 relative z-30">
-        {/* Left — Empty spacer */}
-        <div className="w-32 flex items-center" />
+      <header className="flex items-center justify-between h-14 md:h-16 px-3 md:px-6 gap-2 bg-transparent shrink-0 relative z-30">
+        {/* Left — Empty spacer (apenas desktop, centraliza a busca) */}
+        <div className="hidden md:flex w-32 items-center" />
 
-        {/* Center — Search bar */}
-        <div className="flex-1 max-w-[560px] mx-auto" data-tour="search-bar">
-          <div className="relative">
+        {/* Center — Search */}
+        <div className="flex-1 min-w-0 md:max-w-[560px] md:mx-auto" data-tour="search-bar">
+          {/* Desktop: campo de busca real */}
+          <div className="relative hidden md:block">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-yt-text-secondary pointer-events-none" />
             <input
               type="text"
@@ -40,10 +42,21 @@ export function Header() {
               className="w-full h-10 pl-12 pr-4 bg-yt-search-bg border border-yt-border/50 rounded-lg text-sm text-white placeholder:text-yt-text-tertiary focus:outline-none focus:border-white/30 transition-colors"
             />
           </div>
+
+          {/* Mobile: atalho que abre a tela dedicada de busca (com teclado focado) */}
+          <button
+            type="button"
+            onClick={() => goToSearch()}
+            aria-label="Buscar"
+            className="flex md:hidden items-center gap-3 w-full h-10 pl-4 pr-4 bg-yt-search-bg border border-yt-border/50 rounded-full text-sm text-yt-text-tertiary active:scale-[0.99] transition-transform"
+          >
+            <Search className="w-4 h-4 shrink-0" />
+            <span className="truncate">Pesquisar músicas, álbuns, artistas...</span>
+          </button>
         </div>
 
         {/* Right — Actions & User Profile */}
-        <div className="w-48 flex items-center justify-end gap-3 relative">
+        <div className="flex items-center justify-end gap-2 md:gap-3 md:w-48 relative shrink-0">
           <button
             className="text-yt-text-secondary hover:text-white transition-colors p-1.5 rounded-full hover:bg-yt-surface"
             title="Transmitir"

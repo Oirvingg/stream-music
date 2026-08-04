@@ -81,3 +81,22 @@ export function getPlaylistIdFromPath(pathname: string): string | null {
   const match = pathname.match(/^\/playlist\/([^/]+)$/);
   return match ? decodeURIComponent(match[1]) : null;
 }
+
+/**
+ * Navega para a tela dedicada de Pesquisa (`/search`), usada pela lupa da
+ * Bottom Nav e pela barra de busca do Header no mobile. Distinta de
+ * "Explorar" (Gêneros e Momentos).
+ */
+export function goToSearch() {
+  clearDetailRoutes();
+  const store = usePlayerStore.getState();
+  store.setActivePlaylistId(null);
+  store.setActivePage('SEARCH');
+  window.history.pushState({}, '', '/search');
+}
+
+export function goBackFromSearch() {
+  usePlayerStore.getState().setSearchQuery('');
+  usePlayerStore.getState().setActivePage('HOME');
+  window.history.pushState({}, '', '/');
+}

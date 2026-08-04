@@ -1,6 +1,7 @@
 import { Home, Search, Library, User } from 'lucide-react';
 import { usePlayerStore } from '../store/usePlayerStore';
 import { useAuthStore } from '../store/useAuthStore';
+import { goToSearch } from '../utils/navigation';
 
 export function BottomNav() {
   const { activePage, setActivePage, activePlaylistId, setActivePlaylistId, isExpanded, setSearchQuery } = usePlayerStore();
@@ -16,9 +17,7 @@ export function BottomNav() {
   };
 
   const handleSearch = () => {
-    setActivePlaylistId(null);
-    setSearchQuery('');
-    setActivePage('EXPLORE');
+    goToSearch();
   };
 
   const handleLibrary = () => {
@@ -39,7 +38,7 @@ export function BottomNav() {
   };
 
   const isHomeActive = !activePlaylistId && activePage === 'HOME';
-  const isSearchActive = !activePlaylistId && activePage === 'EXPLORE';
+  const isSearchActive = !activePlaylistId && activePage === 'SEARCH';
   const isLibraryActive = !activePlaylistId && activePage === 'LIBRARY';
   const isUserActive = isAuthModalOpen;
 

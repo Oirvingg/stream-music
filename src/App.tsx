@@ -6,6 +6,7 @@ import { Header } from './components/Header';
 import { PlayerBar } from './components/PlayerBar';
 import { Home } from './pages/Home';
 import { Explore } from './pages/Explore';
+import { Search } from './pages/Search';
 import { Library } from './pages/Library';
 import { ArtistPage } from './pages/ArtistPage';
 import { AlbumPage } from './pages/AlbumPage';
@@ -85,6 +86,8 @@ function App() {
             <ArtistPage artistId={activeArtistId} />
           ) : !activePlaylistId && activePage === 'EXPLORE' ? (
             <Explore />
+          ) : !activePlaylistId && activePage === 'SEARCH' ? (
+            <Search />
           ) : !activePlaylistId && activePage === 'LIBRARY' ? (
             <Library />
           ) : (
