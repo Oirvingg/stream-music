@@ -7,7 +7,7 @@ import { goToSearch } from '../utils/navigation';
 export function Header() {
   const [query, setQuery] = useState('');
   const [showUserMenu, setShowUserMenu] = useState(false);
-  const { searchQuery, setSearchQuery } = usePlayerStore();
+  const { searchQuery, setSearchQuery, activePage } = usePlayerStore();
   const { user, isAuthenticated, setAuthModalOpen, logout } = useAuthStore();
 
   // Mantém a caixa de busca em sincronia quando a pesquisa é limpa
@@ -43,16 +43,19 @@ export function Header() {
             />
           </div>
 
-          {/* Mobile: atalho que abre a tela dedicada de busca (com teclado focado) */}
-          <button
-            type="button"
-            onClick={() => goToSearch()}
-            aria-label="Buscar"
-            className="flex md:hidden items-center gap-3 w-full h-10 pl-4 pr-4 bg-yt-search-bg border border-yt-border/50 rounded-full text-sm text-yt-text-tertiary active:scale-[0.99] transition-transform"
-          >
-            <Search className="w-4 h-4 shrink-0" />
-            <span className="truncate">Pesquisar músicas, álbuns, artistas...</span>
-          </button>
+          {/* Mobile: atalho que abre a tela dedicada de busca (com teclado focado).
+              Oculto quando já se está na tela de busca, para não duplicar o campo. */}
+          {activePage !== 'SEARCH' && (
+            <button
+              type="button"
+              onClick={() => goToSearch()}
+              aria-label="Buscar"
+              className="flex md:hidden items-center gap-3 w-full h-10 pl-4 pr-4 bg-yt-search-bg border border-yt-border/50 rounded-full text-sm text-yt-text-tertiary active:scale-[0.99] transition-transform"
+            >
+              <Search className="w-4 h-4 shrink-0" />
+              <span className="truncate">Pesquisar músicas, álbuns, artistas...</span>
+            </button>
+          )}
         </div>
 
         {/* Right — Actions & User Profile */}
