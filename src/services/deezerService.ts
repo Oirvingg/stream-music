@@ -197,6 +197,40 @@ export const fetchArtistAlbums = async (
   }
 };
 
+export interface DeezerArtistSearchResult {
+  id: string;
+  name: string;
+  pictureMedium: string;
+  pictureXl: string;
+  nbFans: number;
+}
+
+const mapArtistSearchResult = (artist: any): DeezerArtistSearchResult => ({
+  id: String(artist.id),
+  name: artist.name,
+  pictureMedium: artist.picture_medium || artist.picture || '',
+  pictureXl: artist.picture_xl || artist.picture_big || artist.picture_medium || '',
+  nbFans: artist.nb_fan || 0,
+});
+
+/**
+ * Pesquisa artistas pelo texto livre. Usado para destacar o artista mais
+ * relevante (top result) na tela de resultados de pesquisa, no estilo YT Music.
+ */
+export const searchArtists = async (query: string): Promise<DeezerArtistSearchResult[]> => {
+  if (!query) return [];
+
+  try {
+    const data = await fetchDeezerJson(`${BASE_URL}/search/artist?q=${encodeURIComponent(query)}&limit=5`);
+    if (!data?.data) return [];
+
+    return data.data.map(mapArtistSearchResult);
+  } catch (error) {
+    console.error('Erro ao pesquisar artistas no Deezer:', error);
+    return [];
+  }
+};
+
 /**
  * Busca artistas parecidos/relacionados a um artista.
  */

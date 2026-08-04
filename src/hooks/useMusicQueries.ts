@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import {
   fetchGlobalTrending,
   searchTracks,
+  searchArtists,
   fetchGenreTracks,
   fetchArtistById,
   fetchArtistTopTracks,
@@ -42,6 +43,21 @@ export function useSearchTracks(query: string) {
     queryFn: async () => {
       const data = await searchTracks(query);
       return data;
+    },
+    enabled: query.trim().length > 0,
+  });
+}
+
+/**
+ * Busca o artista mais relevante (top result) para uma pesquisa de texto,
+ * usado para exibir o card de destaque de artista na tela de resultados.
+ */
+export function useSearchArtist(query: string) {
+  return useQuery({
+    queryKey: ['searchArtist', query],
+    queryFn: async () => {
+      const results = await searchArtists(query);
+      return results[0] || null;
     },
     enabled: query.trim().length > 0,
   });
