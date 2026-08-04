@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { ChevronLeft, MoreVertical, Music, Play, Shuffle } from 'lucide-react';
+import { useRef, useState } from 'react';
+import { ChevronLeft, ChevronRight, MoreVertical, Music, Play, Shuffle } from 'lucide-react';
 import { usePlayerStore } from '../store/usePlayerStore';
 import { Track } from '../types/music';
 import { useArtistDetails, useArtistTopTracks, useArtistAlbums, useArtistRelated } from '../hooks/useMusicQueries';
@@ -250,33 +250,22 @@ export function ArtistPage({ artistId }: ArtistPageProps) {
 
         {/* Álbuns */}
         {(isLoadingAlbums || (discography?.albums.length ?? 0) > 0) && (
-          <section className="mb-12">
-            <h2 className="text-lg md:text-2xl font-semibold text-white mb-4">Álbuns</h2>
-            <div className="flex gap-4 overflow-x-auto no-scrollbar">
-              {isLoadingAlbums
-                ? Array.from({ length: 5 }).map((_, i) => (
-                    <div key={i} className="flex-shrink-0 w-[170px] animate-pulse">
-                      <div className="aspect-square w-full rounded-md bg-zinc-800 mb-2" />
-                      <div className="h-4 bg-zinc-800 rounded w-3/4" />
-                    </div>
-                  ))
-                : discography?.albums.map((album) => (
-                    <AlbumCard key={album.id} album={album} onPlay={() => handlePlayAlbum(album)} />
-                  ))}
-            </div>
-          </section>
+          <DiscographySection
+            title="Álbuns"
+            items={discography?.albums ?? []}
+            isLoading={isLoadingAlbums}
+            onPlayAlbum={handlePlayAlbum}
+          />
         )}
 
         {/* Singles e EPs */}
         {(discography?.singles.length ?? 0) > 0 && (
-          <section className="mb-12">
-            <h2 className="text-lg md:text-2xl font-semibold text-white mb-4">Singles e EPs</h2>
-            <div className="flex gap-4 overflow-x-auto no-scrollbar">
-              {discography?.singles.map((album) => (
-                <AlbumCard key={album.id} album={album} onPlay={() => handlePlayAlbum(album)} />
-              ))}
-            </div>
-          </section>
+          <DiscographySection
+            title="Singles e EPs"
+            items={discography?.singles ?? []}
+            isLoading={false}
+            onPlayAlbum={handlePlayAlbum}
+          />
         )}
 
         {/* Artistas parecidos */}
@@ -304,9 +293,99 @@ export function ArtistPage({ artistId }: ArtistPageProps) {
   );
 }
 
-function AlbumCard({ album, onPlay }: { album: DeezerAlbum; onPlay: () => void }) {
+/**
+ * Seção de discografia (Álbuns / Singles e EPs) com cabeçalho no estilo
+ * YouTube Music: setas de navegação do carrossel + botão "MAIS" que expande
+ * a seção em uma grade mostrando o catálogo completo já carregado da API.
+ */
+function DiscographySection({
+  title,
+  items,
+  isLoading,
+  onPlayAlbum,
+}: {
+  title: string;
+  items: DeezerAlbum[];
+  isLoading: boolean;
+  onPlayAlbum: (album: DeezerAlbum) => void;
+}) {
+  const [showAll, setShowAll] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const scroll = (dir: 'left' | 'right') => {
+    if (!scrollRef.current) return;
+    scrollRef.current.scrollBy({ left: dir === 'left' ? -340 : 340, behavior: 'smooth' });
+  };
+
   return (
-    <div onClick={() => goToAlbum(album.id)} className="flex-shrink-0 w-[170px] text-left group cursor-pointer">
+    <section className="mb-12">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-lg md:text-2xl font-semibold text-white">{title}</h2>
+        <div className="flex items-center gap-1">
+          {!showAll && !isLoading && items.length > 3 && (
+            <>
+              <button
+                onClick={() => scroll('left')}
+                className="p-1.5 rounded-full text-white/60 hover:text-white hover:bg-white/10 transition-colors"
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+              <button
+                onClick={() => scroll('right')}
+                className="p-1.5 rounded-full text-white/60 hover:text-white hover:bg-white/10 transition-colors"
+              >
+                <ChevronRight className="w-5 h-5" />
+              </button>
+            </>
+          )}
+          {!isLoading && items.length > 0 && (
+            <button
+              onClick={() => setShowAll((v) => !v)}
+              className="ml-1 px-2 text-xs font-bold text-white/60 hover:text-white transition-colors"
+            >
+              {showAll ? 'MENOS' : 'MAIS'}
+            </button>
+          )}
+        </div>
+      </div>
+
+      {isLoading ? (
+        <div className="flex gap-4 overflow-x-auto no-scrollbar">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="flex-shrink-0 w-[170px] animate-pulse">
+              <div className="aspect-square w-full rounded-md bg-zinc-800 mb-2" />
+              <div className="h-4 bg-zinc-800 rounded w-3/4" />
+            </div>
+          ))}
+        </div>
+      ) : showAll ? (
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 md:gap-6">
+          {items.map((album) => (
+            <AlbumCard key={album.id} album={album} onPlay={() => onPlayAlbum(album)} className="w-full" />
+          ))}
+        </div>
+      ) : (
+        <div ref={scrollRef} className="flex gap-4 overflow-x-auto no-scrollbar scroll-smooth">
+          {items.map((album) => (
+            <AlbumCard key={album.id} album={album} onPlay={() => onPlayAlbum(album)} />
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
+function AlbumCard({
+  album,
+  onPlay,
+  className = 'flex-shrink-0 w-[170px]',
+}: {
+  album: DeezerAlbum;
+  onPlay: () => void;
+  className?: string;
+}) {
+  return (
+    <div onClick={() => goToAlbum(album.id)} className={`${className} text-left group cursor-pointer`}>
       <div className="relative aspect-square w-full rounded-md overflow-hidden mb-2">
         <img
           src={album.coverXl}

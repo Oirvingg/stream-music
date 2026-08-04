@@ -184,7 +184,7 @@ export const fetchArtistAlbums = async (
   artistId: string
 ): Promise<{ albums: DeezerAlbum[]; singles: DeezerAlbum[] }> => {
   try {
-    const data = await fetchDeezerJson(`${BASE_URL}/artist/${artistId}/albums?limit=50`);
+    const data = await fetchDeezerJson(`${BASE_URL}/artist/${artistId}/albums?limit=200`);
     const items: DeezerAlbum[] = data?.data ? data.data.map(mapAlbum) : [];
 
     return {
