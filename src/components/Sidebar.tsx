@@ -69,7 +69,7 @@ export function Sidebar() {
           <Compass className="w-5 h-5" />
           Explorar
         </a>
-        <a href="#" onClick={handleLibraryClick} className={`flex items-center gap-5 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${!activePlaylistId && activePage === 'LIBRARY' ? 'bg-white/10 text-white' : 'text-yt-text-secondary hover:text-white hover:bg-white/5'}`}>
+        <a href="#" onClick={handleLibraryClick} data-tour="sidebar-library" className={`flex items-center gap-5 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${!activePlaylistId && activePage === 'LIBRARY' ? 'bg-white/10 text-white' : 'text-yt-text-secondary hover:text-white hover:bg-white/5'}`}>
           <Library className="w-5 h-5" />
           Biblioteca
         </a>

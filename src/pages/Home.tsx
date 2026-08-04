@@ -912,7 +912,7 @@ export function Home() {
     <main className="flex-1 min-h-0 flex flex-col overflow-hidden">
       <div className="flex-1 min-h-0 overflow-y-auto px-3 md:px-6 pb-32 md:pb-4">
         {!searchQuery && (
-          <div className="flex gap-2 py-4 overflow-x-auto no-scrollbar">
+          <div className="flex gap-2 py-4 overflow-x-auto no-scrollbar" data-tour="mood-filters">
             {categories.map((cat) => (
               <button
                 key={cat.id}

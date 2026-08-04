@@ -79,10 +79,3 @@ input[type='range']::-moz-range-thumb {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
-
-/* Onboarding (react-joyride): força a visibilidade do botão "Salvar na
-   playlist", normalmente escondido até o hover, enquanto o passo do tour
-   que o destaca estiver ativo. */
-body.onboarding-step-save-track [data-tour='save-track'] {
-  opacity: 1 !important;
-}

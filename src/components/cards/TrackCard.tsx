@@ -189,7 +189,6 @@ export function TrackCard({
           <button
             type="button"
             aria-label="Menu"
-            data-tour="save-track"
             className={`absolute top-2 right-2 p-1.5 bg-black/60 rounded-full transition-opacity z-10 hover:bg-black/80 ${
               menuOpen ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
             }`}

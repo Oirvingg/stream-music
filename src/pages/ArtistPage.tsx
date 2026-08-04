@@ -341,6 +341,7 @@ function DiscographySection({
           {!isLoading && items.length > 0 && (
             <button
               onClick={() => setShowAll((v) => !v)}
+              data-tour={title === 'Álbuns' ? 'artist-more-button' : undefined}
               className="ml-1 px-2 text-xs font-bold text-white/60 hover:text-white transition-colors"
             >
               {showAll ? 'MENOS' : 'MAIS'}

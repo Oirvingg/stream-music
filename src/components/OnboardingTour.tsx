@@ -1,6 +1,10 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Joyride, EVENTS, STATUS, type EventData, type Step } from 'react-joyride';
 import { useAuthStore } from '../store/useAuthStore';
+import { usePlayerStore } from '../store/usePlayerStore';
+import { useTrendingTracks } from '../hooks/useMusicQueries';
+import { getArtistId } from '../types/music';
+import { goToArtist, goBackFromArtist } from '../utils/navigation';
 
 /**
  * Prefixo fixo nos logs de diagnóstico do tour — facilita filtrar no console
@@ -12,29 +16,100 @@ const LOG_PREFIX = '[OnboardingTour]';
  * garantir que o layout (Header, PlayerBar) já tenha assentado. */
 const START_DELAY_MS = 500;
 
-const STEPS: Step[] = [
-  {
-    target: '[data-tour="search-bar"]',
-    title: 'Encontre sua primeira música',
-    content: 'Use a busca para encontrar qualquer música, álbum, artista ou podcast em segundos.',
-    placement: 'bottom',
-  },
-  {
-    target: '[data-tour="player-bar"]',
-    title: 'Player Global',
-    content: 'Ouça prévias com controles completos: play, pausar, volume e muito mais, de qualquer página do app.',
-    placement: 'top',
-  },
-  {
-    target: '[data-tour="save-track"]',
-    title: 'Salvar na Playlist',
-    content: 'Gostou de uma música? Clique aqui para salvá-la em uma playlist e organizar sua biblioteca.',
-    placement: 'auto',
-    targetWaitTimeout: 10000,
-  },
-];
+const LYRICS_TARGET = '[data-tour="lyrics-tab"]';
+const ARTIST_MORE_TARGET = '[data-tour="artist-more-button"]';
 
-const SAVE_TRACK_TARGET = '[data-tour="save-track"]';
+function wait(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/** Aguarda um seletor aparecer no DOM (polling via rAF), sem nunca rejeitar —
+ * na pior das hipóteses o próprio Joyride trata o alvo como "não encontrado"
+ * e avança o tour graciosamente. */
+function waitForElement(selector: string, timeoutMs: number): Promise<void> {
+  return new Promise((resolve) => {
+    const start = Date.now();
+    const check = () => {
+      if (document.querySelector(selector) || Date.now() - start >= timeoutMs) {
+        resolve();
+        return;
+      }
+      requestAnimationFrame(check);
+    };
+    check();
+  });
+}
+
+/**
+ * Monta os passos do tour. O passo "Letra" expande o player global; o passo
+ * "Catálogo Completo" navega até um artista (o da 1ª faixa em alta) — ambos
+ * usam hooks `before`/`after` do Joyride para preparar a tela antes do
+ * spotlight aparecer. `navigatedToArtistRef` registra se navegamos para uma
+ * página de artista, para poder voltar ao Início quando o tour terminar.
+ */
+function buildSteps(
+  trendingArtistIdRef: { current: string | null },
+  navigatedToArtistRef: { current: boolean }
+): Step[] {
+  return [
+    {
+      target: '[data-tour="search-bar"]',
+      title: 'Encontre sua vibe',
+      content: 'Pesquise por artistas, músicas ou álbuns usando o poder das APIs Deezer e Last.fm.',
+      placement: 'bottom',
+    },
+    {
+      target: '[data-tour="mood-filters"]',
+      title: 'Explore por Humor',
+      content: 'Use os filtros rápidos para encontrar playlists perfeitas para treinar, relaxar ou festejar.',
+      placement: 'bottom',
+      targetWaitTimeout: 5000,
+    },
+    {
+      target: '[data-tour="sidebar-library"]',
+      title: 'Sua Coleção',
+      content: 'Aqui você acessa suas músicas curtidas, artistas favoritos e as playlists que você criar.',
+      placement: 'right',
+    },
+    {
+      target: '[data-tour="player-bar"]',
+      title: 'Controle Total',
+      content: 'Ouça prévias de 30s, controle o volume e gerencie sua fila de reprodução em tempo real.',
+      placement: 'top',
+    },
+    {
+      target: LYRICS_TARGET,
+      title: 'Cante Junto',
+      content: 'Experimente nossa tela de letras com transições suaves de CSS para uma experiência imersiva.',
+      placement: 'top',
+      targetWaitTimeout: 3000,
+      before: async () => {
+        usePlayerStore.setState({ expandedTab: 'LYRICS', isExpanded: true });
+        await wait(600); // aguarda a transição de slide-up (500ms) assentar
+      },
+      after: () => {
+        usePlayerStore.setState({ isExpanded: false });
+      },
+    },
+    {
+      target: ARTIST_MORE_TARGET,
+      title: 'Catálogo Completo',
+      content: "Explore a discografia inteira do seu artista favorito clicando em 'Mais'.",
+      placement: 'auto',
+      targetWaitTimeout: 3000,
+      beforeTimeout: 12000,
+      before: async () => {
+        usePlayerStore.setState({ isExpanded: false });
+        const artistId = trendingArtistIdRef.current;
+        if (artistId) {
+          goToArtist(artistId);
+          navigatedToArtistRef.current = true;
+          await waitForElement(ARTIST_MORE_TARGET, 8000);
+        }
+      },
+    },
+  ];
+}
 
 /**
  * Tutorial guiado (estilo "game") exibido apenas no primeiro login, controlado
@@ -72,40 +147,48 @@ export function OnboardingTour() {
     }
   }, [appReady, isAuthenticated, user, run]);
 
+  // Artista usado no passo 6 — reaproveita o cache já buscado pela Home
+  // (mesma queryKey), sem disparar uma nova requisição à API.
+  const { data: trendingTracks } = useTrendingTracks();
+  const trendingArtistIdRef = useRef<string | null>(null);
+  useEffect(() => {
+    const withArtist = trendingTracks?.find((t) => getArtistId(t.artist));
+    trendingArtistIdRef.current = withArtist ? getArtistId(withArtist.artist) : null;
+  }, [trendingTracks]);
+
+  const navigatedToArtistRef = useRef(false);
+  const steps = useMemo(() => buildSteps(trendingArtistIdRef, navigatedToArtistRef), []);
+
   const handleEvent = useCallback(
     (data: EventData) => {
       const { index, type, status } = data;
-      console.log(`${LOG_PREFIX} evento`, { type, status, index, target: STEPS[index]?.target });
-
-      // O botão "Salvar na playlist" só fica visível no hover — força sua
-      // exibição enquanto esse passo específico estiver ativo (ver index.css).
-      const isSaveTrackStep = STEPS[index]?.target === SAVE_TRACK_TARGET;
-      document.body.classList.toggle(
-        'onboarding-step-save-track',
-        isSaveTrackStep && status === STATUS.RUNNING
-      );
+      console.log(`${LOG_PREFIX} evento`, { type, status, index, target: steps[index]?.target });
 
       if (type === EVENTS.TARGET_NOT_FOUND) {
-        console.warn(`${LOG_PREFIX} alvo não encontrado no DOM para o passo`, STEPS[index]?.target);
+        console.warn(`${LOG_PREFIX} alvo não encontrado no DOM para o passo`, steps[index]?.target);
       }
 
       if (type === EVENTS.TOUR_END && (status === STATUS.FINISHED || status === STATUS.SKIPPED)) {
-        document.body.classList.remove('onboarding-step-save-track');
+        usePlayerStore.setState({ isExpanded: false });
+        if (navigatedToArtistRef.current) {
+          goBackFromArtist();
+          navigatedToArtistRef.current = false;
+        }
         console.log(`${LOG_PREFIX} tour concluído/pulado — atualizando isFirstLogin no backend`);
         completeOnboarding();
       }
     },
-    [completeOnboarding]
+    [completeOnboarding, steps]
   );
 
   useEffect(() => () => {
-    document.body.classList.remove('onboarding-step-save-track');
+    usePlayerStore.setState({ isExpanded: false });
   }, []);
 
   return (
     <Joyride
       run={run}
-      steps={STEPS}
+      steps={steps}
       continuous
       onEvent={handleEvent}
       locale={{
@@ -136,7 +219,13 @@ export function OnboardingTour() {
         tooltip: { borderRadius: 12, transition: 'transform 0.3s ease, opacity 0.3s ease' },
         tooltipTitle: { fontSize: 16, fontWeight: 700, marginBottom: 4 },
         tooltipContent: { fontSize: 14, color: '#aaaaaa', padding: '8px 0' },
-        buttonPrimary: { borderRadius: 999, padding: '8px 16px', fontWeight: 600 },
+        buttonPrimary: {
+          borderRadius: 999,
+          padding: '8px 18px',
+          fontWeight: 700,
+          boxShadow: '0 8px 20px -6px rgba(255, 0, 0, 0.6)',
+        },
+        buttonBack: { color: '#aaaaaa' },
         buttonSkip: { color: '#aaaaaa' },
       }}
     />

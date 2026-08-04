@@ -267,6 +267,7 @@ export function ExpandedPlayer({ seek }: ExpandedPlayerProps) {
                 <button
                   key={tab}
                   onClick={() => setExpandedTab(mappedTab)}
+                  data-tour={mappedTab === 'LYRICS' ? 'lyrics-tab' : undefined}
                   className={`text-sm font-medium transition-colors relative pb-2 ${
                     isActive ? 'text-white' : 'text-white/50 hover:text-white/80'
                   }`}
