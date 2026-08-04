@@ -4,6 +4,8 @@ import { usePlayerStore } from '../store/usePlayerStore';
 import { fetchLyrics } from '../services/lyricsService';
 import { DraggableTrackRow } from './DraggableTrackRow';
 import { AudioVisualizer } from './AudioVisualizer';
+import { getArtistName, getArtistId } from '../types/music';
+import { goToArtist } from '../utils/navigation';
 
 interface LyricLine {
   time: number;
@@ -94,7 +96,7 @@ export function ExpandedPlayer({ seek }: ExpandedPlayerProps) {
       return;
     }
 
-    const artist = typeof currentTrack.artist === 'string' ? currentTrack.artist : currentTrack.artist.name;
+    const artist = getArtistName(currentTrack.artist);
     const title = currentTrack.title;
 
     let isMounted = true;
@@ -175,11 +177,8 @@ export function ExpandedPlayer({ seek }: ExpandedPlayerProps) {
     }
   };
 
-  const artistName = currentTrack
-    ? typeof currentTrack.artist === 'string'
-      ? currentTrack.artist
-      : currentTrack.artist.name
-    : '';
+  const artistName = currentTrack ? getArtistName(currentTrack.artist) : '';
+  const artistId = currentTrack ? getArtistId(currentTrack.artist) : null;
 
   return (
     <div 
@@ -223,7 +222,17 @@ export function ExpandedPlayer({ seek }: ExpandedPlayerProps) {
                     {currentTrack.title}
                   </h2>
                   <p className="text-lg text-[#AAAAAA] truncate mt-1">
-                    {artistName} {currentTrack.album ? `• ${currentTrack.album}` : ''}
+                    {artistId ? (
+                      <span
+                        onClick={() => goToArtist(artistId)}
+                        className="hover:text-white hover:underline transition-colors cursor-pointer"
+                      >
+                        {artistName}
+                      </span>
+                    ) : (
+                      artistName
+                    )}{' '}
+                    {currentTrack.album ? `• ${currentTrack.album}` : ''}
                   </p>
                 </div>
                 
@@ -270,7 +279,8 @@ export function ExpandedPlayer({ seek }: ExpandedPlayerProps) {
               <div className="flex flex-col gap-2">
                 {queue.map((track, idx) => {
                   const isPlayingTrack = currentTrack?.id === track.id;
-                  const trackArtist = typeof track.artist === 'string' ? track.artist : track.artist.name;
+                  const trackArtist = getArtistName(track.artist);
+                  const trackArtistId = getArtistId(track.artist);
                   return (
                     <DraggableTrackRow 
                       key={`${track.id}-${idx}`}
@@ -289,7 +299,19 @@ export function ExpandedPlayer({ seek }: ExpandedPlayerProps) {
                           {track.title}
                         </p>
                         <p className="text-xs text-white/50 truncate">
-                          {trackArtist}
+                          {trackArtistId ? (
+                            <span
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                goToArtist(trackArtistId);
+                              }}
+                              className="hover:text-white hover:underline transition-colors"
+                            >
+                              {trackArtist}
+                            </span>
+                          ) : (
+                            trackArtist
+                          )}
                         </p>
                       </div>
                       {isPlayingTrack ? (

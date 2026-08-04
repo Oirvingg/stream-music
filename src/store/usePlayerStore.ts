@@ -35,6 +35,9 @@ interface PlayerState {
   setActivePage: (page: 'HOME' | 'EXPLORE' | 'LIBRARY') => void;
   reorderQueue: (startIndex: number, endIndex: number) => void;
 
+  activeArtistId: string | null;
+  setActiveArtistId: (id: string | null) => void;
+
   feedbackMessage: string | null;
   setFeedbackMessage: (msg: string | null) => void;
 }
@@ -55,6 +58,7 @@ export const usePlayerStore = create<PlayerState>()(
       activePlaylistId: null,
       activePage: 'HOME',
       feedbackMessage: null,
+      activeArtistId: null,
 
       setTrack: (track) =>
         set((state) => {
@@ -83,6 +87,7 @@ export const usePlayerStore = create<PlayerState>()(
 
       setActivePlaylistId: (id) => set({ activePlaylistId: id }),
       setActivePage: (page) => set({ activePage: page }),
+      setActiveArtistId: (id) => set({ activeArtistId: id }),
 
       toggleExpand: () => set((state) => ({ isExpanded: !state.isExpanded })),
       setExpandedTab: (tab) => set({ expandedTab: tab }),

@@ -70,6 +70,40 @@ export const searchTracks = async (query: string): Promise<Track[]> => {
   }
 };
 
+export interface LastfmArtistInfo {
+  bio: string;
+  listeners: number;
+}
+
+/**
+ * Busca a biografia e o número de ouvintes de um artista no Last.fm.
+ * O Deezer não expõe esses dados, por isso complementamos com o Last.fm.
+ */
+export const fetchArtistInfo = async (artistName: string): Promise<LastfmArtistInfo | null> => {
+  if (!artistName) return null;
+
+  try {
+    const response = await fetch(
+      `${BASE_URL}?method=artist.getinfo&artist=${encodeURIComponent(artistName)}&api_key=${API_KEY}&format=json`
+    );
+    const data = await response.json();
+
+    if (!data.artist) return null;
+
+    const bioRaw: string = data.artist.bio?.summary || '';
+    // Remove o link "Read more on Last.fm" que a API embute no fim do resumo
+    const bio = bioRaw.replace(/<a href="[^"]*">Read more on Last\.fm<\/a>/i, '').trim();
+
+    return {
+      bio,
+      listeners: Number(data.artist.stats?.listeners) || 0,
+    };
+  } catch (error) {
+    console.error('Erro ao buscar informações do artista:', error);
+    return null;
+  }
+};
+
 /**
  * Busca os artistas mais ouvidos de um usuário no Last.fm.
  */

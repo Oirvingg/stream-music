@@ -29,11 +29,18 @@ const fetchDeezerJson = async (url: string): Promise<any | null> => {
 const mapDeezerTrack = (track: any): Track => ({
   id: String(track.id),
   title: track.title,
-  artist: track.artist.name,
+  artist: track.artist
+    ? {
+        id: String(track.artist.id),
+        name: track.artist.name,
+        imageUrl: track.artist.picture_medium || track.artist.picture,
+      }
+    : 'Artista desconhecido',
   album: track.album?.title || 'Unknown Album',
   coverUrl: track.album?.cover_xl || track.album?.cover_medium || track.album?.cover || '',
   audioUrl: track.preview || '', // Preview de 30 segundos
   duration: track.duration || 0,
+  rank: track.rank,
 });
 
 /**
@@ -95,6 +102,135 @@ export const fetchGenreTracks = async (genreName: string): Promise<Track[]> => {
     return fallbackData?.data ? fallbackData.data.map(mapDeezerTrack) : [];
   } catch (error) {
     console.error('Erro ao buscar faixas por gênero:', error);
+    return [];
+  }
+};
+
+export interface DeezerArtistDetails {
+  id: string;
+  name: string;
+  pictureXl: string;
+  nbFans: number;
+  nbAlbums: number;
+}
+
+export interface DeezerArtistSummary {
+  id: string;
+  name: string;
+  pictureMedium: string;
+}
+
+export interface DeezerAlbum {
+  id: string;
+  title: string;
+  coverXl: string;
+  releaseYear: string;
+  recordType: string;
+}
+
+const mapArtistSummary = (artist: any): DeezerArtistSummary => ({
+  id: String(artist.id),
+  name: artist.name,
+  pictureMedium: artist.picture_medium || artist.picture || '',
+});
+
+const mapAlbum = (album: any): DeezerAlbum => ({
+  id: String(album.id),
+  title: album.title,
+  coverXl: album.cover_xl || album.cover_medium || album.cover || '',
+  releaseYear: album.release_date ? String(album.release_date).slice(0, 4) : '',
+  recordType: album.record_type || 'album',
+});
+
+/**
+ * Busca os detalhes públicos de um artista (nome, foto em alta resolução, fãs).
+ */
+export const fetchArtistById = async (artistId: string): Promise<DeezerArtistDetails | null> => {
+  try {
+    const data = await fetchDeezerJson(`${BASE_URL}/artist/${artistId}`);
+    if (!data || data.error) return null;
+
+    return {
+      id: String(data.id),
+      name: data.name,
+      pictureXl: data.picture_xl || data.picture_big || data.picture_medium || '',
+      nbFans: data.nb_fan || 0,
+      nbAlbums: data.nb_album || 0,
+    };
+  } catch (error) {
+    console.error('Erro ao buscar artista no Deezer:', error);
+    return null;
+  }
+};
+
+/**
+ * Busca as faixas mais populares de um artista.
+ */
+export const fetchArtistTopTracks = async (artistId: string, limit = 10): Promise<Track[]> => {
+  try {
+    const data = await fetchDeezerJson(`${BASE_URL}/artist/${artistId}/top?limit=${limit}`);
+    return data?.data ? data.data.map(mapDeezerTrack) : [];
+  } catch (error) {
+    console.error('Erro ao buscar top faixas do artista:', error);
+    return [];
+  }
+};
+
+/**
+ * Busca a discografia de um artista, separada em álbuns e singles/EPs
+ * com base no campo `record_type` retornado pelo Deezer.
+ */
+export const fetchArtistAlbums = async (
+  artistId: string
+): Promise<{ albums: DeezerAlbum[]; singles: DeezerAlbum[] }> => {
+  try {
+    const data = await fetchDeezerJson(`${BASE_URL}/artist/${artistId}/albums?limit=50`);
+    const items: DeezerAlbum[] = data?.data ? data.data.map(mapAlbum) : [];
+
+    return {
+      albums: items.filter((a) => a.recordType === 'album'),
+      singles: items.filter((a) => a.recordType === 'single' || a.recordType === 'ep'),
+    };
+  } catch (error) {
+    console.error('Erro ao buscar discografia do artista:', error);
+    return { albums: [], singles: [] };
+  }
+};
+
+/**
+ * Busca artistas parecidos/relacionados a um artista.
+ */
+export const fetchRelatedArtists = async (artistId: string): Promise<DeezerArtistSummary[]> => {
+  try {
+    const data = await fetchDeezerJson(`${BASE_URL}/artist/${artistId}/related?limit=12`);
+    return data?.data ? data.data.map(mapArtistSummary) : [];
+  } catch (error) {
+    console.error('Erro ao buscar artistas parecidos:', error);
+    return [];
+  }
+};
+
+/**
+ * Busca as faixas de um álbum específico (usado para tocar um álbum inteiro).
+ * Usamos o endpoint de detalhes do álbum (não `/tracks`) porque as faixas
+ * aninhadas não trazem `album.cover`/`album.title` — precisamos deles do pai.
+ */
+export const fetchAlbumTracks = async (albumId: string): Promise<Track[]> => {
+  try {
+    const data = await fetchDeezerJson(`${BASE_URL}/album/${albumId}`);
+    if (!data || data.error) return [];
+
+    const coverUrl = data.cover_xl || data.cover_medium || data.cover || '';
+    const albumTitle = data.title || 'Unknown Album';
+    const items: any[] = data.tracks?.data || [];
+
+    return items.map((track) => ({
+      ...mapDeezerTrack(track),
+      album: albumTitle,
+      coverUrl,
+    }));
+  } catch (error) {
+    console.error('Erro ao buscar faixas do álbum:', error);
     return [];
   }
 };

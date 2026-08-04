@@ -6,22 +6,21 @@ import {
 import { usePlayerStore } from '../store/usePlayerStore';
 import { useAudioPlayer } from '../hooks/useAudioPlayer';
 import { ExpandedPlayer } from './ExpandedPlayer';
+import { getArtistName, getArtistId } from '../types/music';
+import { goToArtist } from '../utils/navigation';
 
 export function PlayerBar() {
-  const { 
-    currentTrack, isPlaying, togglePlay, 
-    volume, setVolume, 
+  const {
+    currentTrack, isPlaying, togglePlay,
+    volume, setVolume,
     currentTime, duration, nextTrack, prevTrack,
     toggleExpand, feedbackMessage
   } = usePlayerStore();
 
   const { seek } = useAudioPlayer();
 
-  const artistName = currentTrack
-    ? typeof currentTrack.artist === 'string'
-      ? currentTrack.artist
-      : currentTrack.artist.name
-    : '';
+  const artistName = currentTrack ? getArtistName(currentTrack.artist) : '';
+  const artistId = currentTrack ? getArtistId(currentTrack.artist) : null;
 
   const formatTime = (sec: number) => {
     if (sec === undefined || sec === null || isNaN(sec)) return "0:00";
@@ -112,7 +111,20 @@ export function PlayerBar() {
                 {currentTrack.title}
               </span>
               <span className="text-xs text-yt-text-secondary truncate">
-                {artistName} • 2.5M de visualizações
+                {artistId ? (
+                  <span
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      goToArtist(artistId);
+                    }}
+                    className="hover:text-white hover:underline transition-colors"
+                  >
+                    {artistName}
+                  </span>
+                ) : (
+                  artistName
+                )}{' '}
+                • 2.5M de visualizações
               </span>
             </div>
 

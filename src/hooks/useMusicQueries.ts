@@ -1,6 +1,14 @@
 import { useQuery } from '@tanstack/react-query';
-import { fetchGlobalTrending, searchTracks, fetchGenreTracks } from '../services/deezerService';
-import { fetchUserTopArtists } from '../services/lastfmService';
+import {
+  fetchGlobalTrending,
+  searchTracks,
+  fetchGenreTracks,
+  fetchArtistById,
+  fetchArtistTopTracks,
+  fetchArtistAlbums,
+  fetchRelatedArtists,
+} from '../services/deezerService';
+import { fetchUserTopArtists, fetchArtistInfo } from '../services/lastfmService';
 import { fetchCategories } from '../services/categoriesService';
 import { Track } from '../types/music';
 
@@ -86,5 +94,69 @@ export function usePersonalizedTrendingTracks(history: Track[], lastfmUsername: 
     // Executa apenas se tivermos histórico ou username
     enabled: !!lastfmUsername || history.length > 0,
     staleTime: 5 * 60 * 1000,
+  });
+}
+
+export interface ArtistDetails {
+  id: string;
+  name: string;
+  pictureXl: string;
+  nbAlbums: number;
+  bio: string;
+  listeners: number;
+}
+
+/**
+ * Detalhes de um artista para a página de perfil: foto em alta resolução e
+ * contagem de álbuns vêm do Deezer; bio e ouvintes vêm do Last.fm (o Deezer
+ * não expõe esses dados). Se o Last.fm falhar, cai para os fãs do Deezer.
+ */
+export function useArtistDetails(artistId: string | null) {
+  return useQuery({
+    queryKey: ['artistDetails', artistId],
+    queryFn: async (): Promise<ArtistDetails | null> => {
+      const artist = await fetchArtistById(artistId!);
+      if (!artist) return null;
+
+      const info = await fetchArtistInfo(artist.name);
+
+      return {
+        id: artist.id,
+        name: artist.name,
+        pictureXl: artist.pictureXl,
+        nbAlbums: artist.nbAlbums,
+        bio: info?.bio || '',
+        listeners: info?.listeners || artist.nbFans,
+      };
+    },
+    enabled: !!artistId,
+    staleTime: 30 * 60 * 1000,
+  });
+}
+
+export function useArtistTopTracks(artistId: string | null) {
+  return useQuery({
+    queryKey: ['artistTopTracks', artistId],
+    queryFn: () => fetchArtistTopTracks(artistId!, 10),
+    enabled: !!artistId,
+    staleTime: 30 * 60 * 1000,
+  });
+}
+
+export function useArtistAlbums(artistId: string | null) {
+  return useQuery({
+    queryKey: ['artistAlbums', artistId],
+    queryFn: () => fetchArtistAlbums(artistId!),
+    enabled: !!artistId,
+    staleTime: 30 * 60 * 1000,
+  });
+}
+
+export function useArtistRelated(artistId: string | null) {
+  return useQuery({
+    queryKey: ['artistRelated', artistId],
+    queryFn: () => fetchRelatedArtists(artistId!),
+    enabled: !!artistId,
+    staleTime: 30 * 60 * 1000,
   });
 }

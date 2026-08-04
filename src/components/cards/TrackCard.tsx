@@ -9,14 +9,15 @@ import {
   Share2,
   Trash2,
 } from 'lucide-react';
-import { Track } from '../../types/music';
+import { Track, getArtistName, getArtistId } from '../../types/music';
 import { usePlayerStore } from '../../store/usePlayerStore';
 import { useToggleFavoriteTrack, useFavoriteTracks } from '../../hooks/useLibraryQueries';
 import { CardMenuDropdown, CardMenuItem } from '../CardMenuDropdown';
 import { SaveToPlaylistModal } from '../SaveToPlaylistModal';
+import { goToArtist } from '../../utils/navigation';
 
 function getArtistLabel(track: Track) {
-  return typeof track.artist === 'string' ? track.artist : track.artist.name;
+  return getArtistName(track.artist);
 }
 
 interface TrackCardProps {
@@ -53,6 +54,7 @@ export function TrackCard({
 
   const isActive = currentTrack?.id === track.id;
   const artistLabel = getArtistLabel(track);
+  const artistId = getArtistId(track.artist);
   const list = trackList.length > 0 ? trackList : [track];
   const isLiked = likedTracks.some((t) => t.id === track.id);
 
@@ -200,7 +202,20 @@ export function TrackCard({
           {track.title}
         </p>
         <p className="text-xs text-yt-text-secondary truncate leading-4">
-          {artistLabel}{track.album ? ` • ${track.album}` : ''}
+          {artistId ? (
+            <span
+              onClick={(e) => {
+                e.stopPropagation();
+                goToArtist(artistId);
+              }}
+              className="hover:text-white hover:underline transition-colors"
+            >
+              {artistLabel}
+            </span>
+          ) : (
+            artistLabel
+          )}
+          {track.album ? ` • ${track.album}` : ''}
         </p>
       </div>
 

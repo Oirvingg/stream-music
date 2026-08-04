@@ -7,18 +7,34 @@ import { PlayerBar } from './components/PlayerBar';
 import { Home } from './pages/Home';
 import { Explore } from './pages/Explore';
 import { Library } from './pages/Library';
+import { ArtistPage } from './pages/ArtistPage';
 import { AuthModal } from './components/auth/AuthModal';
 import { usePlayerStore } from './store/usePlayerStore';
 import { useAuthStore } from './store/useAuthStore';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
+import { getArtistIdFromPath } from './utils/navigation';
 
 function App() {
   // Instancia atalhos globais de teclado
   useKeyboardShortcuts();
 
-  const { activePage, activePlaylistId } = usePlayerStore();
+  const { activePage, activePlaylistId, activeArtistId, setActiveArtistId } = usePlayerStore();
   const { user, initAuthListener } = useAuthStore();
   const queryClient = useQueryClient();
+
+  // Sincroniza o estado do artista ativo com a URL (/artist/:id), tanto ao
+  // carregar/atualizar a página diretamente nesse link quanto ao navegar
+  // com os botões voltar/avançar do navegador.
+  useEffect(() => {
+    setActiveArtistId(getArtistIdFromPath(window.location.pathname));
+
+    const handlePopState = () => {
+      setActiveArtistId(getArtistIdFromPath(window.location.pathname));
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [setActiveArtistId]);
 
   // Restaura a sessão salva (token JWT) no carregamento da aplicação
   useEffect(() => {
@@ -51,7 +67,15 @@ function App() {
         {/* Right content column */}
         <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
           <Header />
-          {!activePlaylistId && activePage === 'EXPLORE' ? <Explore /> : !activePlaylistId && activePage === 'LIBRARY' ? <Library /> : <Home />}
+          {activeArtistId ? (
+            <ArtistPage artistId={activeArtistId} />
+          ) : !activePlaylistId && activePage === 'EXPLORE' ? (
+            <Explore />
+          ) : !activePlaylistId && activePage === 'LIBRARY' ? (
+            <Library />
+          ) : (
+            <Home />
+          )}
         </div>
       </div>
 

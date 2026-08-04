@@ -1,9 +1,10 @@
 import { useTrendingTracks, useGenreTracks } from '../hooks/useMusicQueries';
 import { usePlayerStore } from '../store/usePlayerStore';
-import { Track } from '../types/music';
+import { Track, getArtistName, getArtistId } from '../types/music';
 import { Play, MoreVertical, ChevronLeft } from 'lucide-react';
 import { useState } from 'react';
 import { TrackContextMenu } from '../components/TrackContextMenu';
+import { goToArtist } from '../utils/navigation';
 
 const EXPLORE_CATEGORIES = [
   { id: 'pop', name: 'Pop', color: 'bg-pink-600' },
@@ -69,8 +70,9 @@ export function Explore() {
             <div className="flex flex-col gap-2">
               {categoryTracks.map((track, idx) => {
                 const isActive = currentTrack?.id === track.id;
-                const artistLabel = typeof track.artist === 'string' ? track.artist : track.artist.name;
-                
+                const artistLabel = getArtistName(track.artist);
+                const artistId = getArtistId(track.artist);
+
                 return (
                   <div
                     key={track.id}
@@ -93,7 +95,19 @@ export function Explore() {
                         {track.title}
                       </p>
                       <p className="text-xs text-yt-text-secondary truncate">
-                        {artistLabel}
+                        {artistId ? (
+                          <span
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              goToArtist(artistId);
+                            }}
+                            className="hover:text-white hover:underline transition-colors"
+                          >
+                            {artistLabel}
+                          </span>
+                        ) : (
+                          artistLabel
+                        )}
                       </p>
                     </div>
                     <button 
