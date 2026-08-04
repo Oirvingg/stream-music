@@ -14,6 +14,7 @@ const toUserResponse = (user) => ({
   name: user.name,
   email: user.email,
   photoURL: user.photo_url || DEFAULT_PHOTO_URL,
+  isFirstLogin: user.is_first_login,
 });
 
 const signToken = (user) =>
@@ -89,6 +90,10 @@ const signToken = (user) =>
  *         photoURL:
  *           type: string
  *           example: "https://images.unsplash.com/photo-1534528741775-53994a69daeb"
+ *         isFirstLogin:
+ *           type: boolean
+ *           description: Indica se o usuário ainda não concluiu o tutorial de onboarding
+ *           example: true
  *
  *     AuthResponse:
  *       type: object
@@ -145,7 +150,7 @@ router.post('/register', async (req, res) => {
 
     const passwordHash = await bcrypt.hash(password, 10);
     const { rows } = await pool.query(
-      'INSERT INTO users (name, email, password_hash, photo_url) VALUES ($1, $2, $3, $4) RETURNING id, name, email, photo_url',
+      'INSERT INTO users (name, email, password_hash, photo_url) VALUES ($1, $2, $3, $4) RETURNING id, name, email, photo_url, is_first_login',
       [name.trim(), email, passwordHash, DEFAULT_PHOTO_URL]
     );
     const user = rows[0];
@@ -259,7 +264,7 @@ router.post('/forgot-password', async (req, res) => {
 router.get('/me', authenticate, async (req, res) => {
   try {
     const { rows } = await pool.query(
-      'SELECT id, name, email, photo_url FROM users WHERE id = $1',
+      'SELECT id, name, email, photo_url, is_first_login FROM users WHERE id = $1',
       [req.user.uid]
     );
     const user = rows[0];
@@ -272,6 +277,30 @@ router.get('/me', authenticate, async (req, res) => {
   } catch (error) {
     console.error('Erro ao buscar perfil:', error);
     res.status(500).json({ message: 'Erro ao buscar perfil.' });
+  }
+});
+
+/**
+ * @swagger
+ * /auth/onboarding:
+ *   put:
+ *     summary: Marcar o tutorial de onboarding (primeiro login) como concluído
+ *     tags: [Autenticação]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Flag isFirstLogin atualizada para false
+ *       401:
+ *         description: Não autorizado (Token Ausente ou Inválido)
+ */
+router.put('/onboarding', authenticate, async (req, res) => {
+  try {
+    await pool.query('UPDATE users SET is_first_login = false WHERE id = $1', [req.user.uid]);
+    res.json({ message: 'Onboarding concluído.' });
+  } catch (error) {
+    console.error('Erro ao atualizar onboarding:', error);
+    res.status(500).json({ message: 'Erro ao atualizar onboarding.' });
   }
 });
 

@@ -6,8 +6,12 @@ CREATE TABLE IF NOT EXISTS users (
   email VARCHAR(255) UNIQUE NOT NULL,
   password_hash VARCHAR(255) NOT NULL,
   photo_url TEXT,
+  is_first_login BOOLEAN NOT NULL DEFAULT true,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+-- Garante a coluna também em bancos já existentes (setup-db é idempotente).
+ALTER TABLE users ADD COLUMN IF NOT EXISTS is_first_login BOOLEAN NOT NULL DEFAULT true;
 
 CREATE TABLE IF NOT EXISTS playlists (
   id SERIAL PRIMARY KEY,

@@ -6,6 +6,7 @@ export interface AuthUserData {
   email: string | null;
   displayName: string | null;
   photoURL: string | null;
+  isFirstLogin: boolean;
 }
 
 interface AuthApiUser {
@@ -13,6 +14,7 @@ interface AuthApiUser {
   name: string;
   email: string;
   photoURL: string;
+  isFirstLogin: boolean;
 }
 
 interface AuthApiResponse {
@@ -26,6 +28,7 @@ const toAuthUserData = (user: AuthApiUser): AuthUserData => ({
   email: user.email,
   displayName: user.name,
   photoURL: user.photoURL,
+  isFirstLogin: user.isFirstLogin,
 });
 
 /**
@@ -92,4 +95,12 @@ export const restoreSession = async (): Promise<AuthUserData | null> => {
     clearToken();
     return null;
   }
+};
+
+/**
+ * Marca o tutorial de onboarding (primeiro login) como concluído no backend,
+ * para que ele não reapareça nos próximos logins.
+ */
+export const completeOnboarding = async (): Promise<void> => {
+  await apiFetch('/auth/onboarding', { method: 'PUT' });
 };

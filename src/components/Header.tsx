@@ -28,7 +28,7 @@ export function Header() {
         <div className="w-32 flex items-center" />
 
         {/* Center — Search bar */}
-        <div className="flex-1 max-w-[560px] mx-auto">
+        <div className="flex-1 max-w-[560px] mx-auto" data-tour="search-bar">
           <div className="relative">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-yt-text-secondary pointer-events-none" />
             <input

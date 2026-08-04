@@ -50,7 +50,10 @@ export function PlayerBar() {
         <span className="text-2xl font-bold tracking-wide">{feedbackMessage}</span>
       </div>
 
-      <footer className="h-14 md:h-[72px] bg-yt-player-bg flex items-center px-2 md:px-4 select-none shrink-0 z-50 relative">
+      <footer
+        data-tour="player-bar"
+        className="h-14 md:h-[72px] bg-yt-player-bg flex items-center px-2 md:px-4 select-none shrink-0 z-50 relative"
+      >
       {/* Mobile-only thin progress bar at top */}
       <div className="absolute top-0 left-0 right-0 h-[2px] bg-white/10 md:hidden">
         <div 

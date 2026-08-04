@@ -11,6 +11,7 @@ import { ArtistPage } from './pages/ArtistPage';
 import { AlbumPage } from './pages/AlbumPage';
 import { PlaylistPage } from './pages/PlaylistPage';
 import { AuthModal } from './components/auth/AuthModal';
+import { OnboardingTour } from './components/OnboardingTour';
 import { usePlayerStore } from './store/usePlayerStore';
 import { useAuthStore } from './store/useAuthStore';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
@@ -98,6 +99,9 @@ function App() {
 
       {/* Modal Global de Autenticação (Login / Cadastro) */}
       <AuthModal />
+
+      {/* Onboarding Interativo (Guided Tour) — apenas no primeiro login */}
+      <OnboardingTour />
     </div>
   );
 }

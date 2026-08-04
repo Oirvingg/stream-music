@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { AuthUserData, logoutUser, restoreSession } from '../services/authService';
+import { AuthUserData, completeOnboarding as completeOnboardingRequest, logoutUser, restoreSession } from '../services/authService';
 
 export type AuthMode = 'login' | 'register';
 
@@ -19,9 +19,10 @@ interface AuthState {
   setError: (error: string | null) => void;
   logout: () => Promise<void>;
   initAuthListener: () => () => void;
+  completeOnboarding: () => Promise<void>;
 }
 
-export const useAuthStore = create<AuthState>((set) => ({
+export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   isAuthenticated: false,
   isAuthModalOpen: false,
@@ -62,5 +63,19 @@ export const useAuthStore = create<AuthState>((set) => ({
       set({ user, isAuthenticated: !!user });
     });
     return () => {};
+  },
+
+  completeOnboarding: async () => {
+    const { user } = get();
+    if (!user || !user.isFirstLogin) return;
+
+    // Atualiza a UI otimisticamente para o tutorial não reaparecer, mesmo
+    // que a requisição ao backend demore ou falhe silenciosamente.
+    set({ user: { ...user, isFirstLogin: false } });
+    try {
+      await completeOnboardingRequest();
+    } catch (error) {
+      console.error('Erro ao concluir onboarding:', error);
+    }
   },
 }));
