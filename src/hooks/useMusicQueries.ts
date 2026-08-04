@@ -6,6 +6,7 @@ import {
   searchPlaylists,
   searchAlbums,
   searchPodcasts,
+  fetchTrendingPodcasts,
   fetchGenreTracks,
   fetchArtistById,
   fetchArtistTopTracks,
@@ -123,6 +124,19 @@ export function useGenreTracks(genre: string | null) {
       return await fetchGenreTracks(genre);
     },
     enabled: !!genre,
+  });
+}
+
+/**
+ * Podcasts em destaque no chart global, usados pelo chip de categoria
+ * "Podcasts" na tela inicial.
+ */
+export function useTrendingPodcasts(enabled: boolean) {
+  return useQuery({
+    queryKey: ['trendingPodcasts'],
+    queryFn: () => fetchTrendingPodcasts(),
+    enabled,
+    staleTime: 30 * 60 * 1000,
   });
 }
 

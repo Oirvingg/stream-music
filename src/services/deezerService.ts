@@ -333,6 +333,22 @@ export const searchPodcasts = async (query: string, limit = 20): Promise<DeezerP
 };
 
 /**
+ * Busca os podcasts em destaque no chart global do Deezer, usado pelo chip
+ * de categoria "Podcasts" na tela inicial.
+ */
+export const fetchTrendingPodcasts = async (limit = 20): Promise<DeezerPodcastSearchResult[]> => {
+  try {
+    const data = await fetchDeezerJson(`${BASE_URL}/chart/0/podcasts?limit=${limit}`);
+    if (!data?.data) return [];
+
+    return data.data.map(mapPodcastSearchResult);
+  } catch (error) {
+    console.error('Erro ao buscar podcasts em destaque no Deezer:', error);
+    return [];
+  }
+};
+
+/**
  * Busca as faixas de uma playlist pública (usado para tocar uma playlist
  * inteira a partir do filtro "Playlists em destaque").
  */

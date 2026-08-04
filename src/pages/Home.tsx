@@ -26,9 +26,12 @@ import {
   useArtistAlbums,
   usePersonalizedTrendingTracks,
   useCategories,
+  useGenreTracks,
+  useTrendingPodcasts,
 } from '../hooks/useMusicQueries';
 import { useUserPlaylists, useFavoriteTracks, useRenamePlaylist, useDeletePlaylist, useRemoveTrackFromPlaylist, useReorderPlaylistTracks } from '../hooks/useLibraryQueries';
 import { goToArtist, goToAlbum, goToPlaylist } from '../utils/navigation';
+import { Category } from '../services/categoriesService';
 
 const SEARCH_FILTERS = ['Tudo', 'Artistas', 'Playlists em destaque', 'Músicas', 'Álbuns', 'Vídeos', 'Podcasts'];
 
@@ -641,6 +644,64 @@ function MusicSection({ title, tracks }: { title: string; tracks: Track[] }) {
   );
 }
 
+const CATEGORY_TITLES: Record<string, string> = {
+  podcasts: 'Podcasts em destaque',
+  'para treinar': 'Músicas para Treinar',
+  festa: 'Músicas para Festa',
+  energia: 'Músicas de Energia',
+  relax: 'Músicas para Relaxar',
+  romance: 'Músicas de Romance',
+  triste: 'Músicas para Momentos Tristes',
+  positividade: 'Músicas de Positividade',
+  foco: 'Músicas para Foco',
+  sertanejo: 'Sertanejo em Alta',
+};
+
+function getCategoryTitle(name: string): string {
+  return CATEGORY_TITLES[name.trim().toLowerCase()] ?? `${name} em Alta`;
+}
+
+function CategoryResults({ category }: { category: Category }) {
+  const isPodcastCategory = category.name.trim().toLowerCase() === 'podcasts';
+  const { data: genreTracks = [], isLoading: isLoadingGenre } = useGenreTracks(isPodcastCategory ? null : category.name);
+  const { data: podcasts = [], isLoading: isLoadingPodcasts } = useTrendingPodcasts(isPodcastCategory);
+  const title = getCategoryTitle(category.name);
+
+  if (isPodcastCategory) {
+    return (
+      <section className="mb-8">
+        <h2 className="text-lg md:text-2xl font-semibold text-white mb-4">{title}</h2>
+        {isLoadingPodcasts ? (
+          <GridSkeleton />
+        ) : podcasts.length > 0 ? (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 md:gap-6">
+            {podcasts.map((p) => (
+              <PodcastGridCard key={p.id} podcast={p} />
+            ))}
+          </div>
+        ) : (
+          <EmptyFilterState message="Nenhum podcast disponível no momento." />
+        )}
+      </section>
+    );
+  }
+
+  if (isLoadingGenre) {
+    return <MusicSectionSkeleton title={title} />;
+  }
+
+  if (genreTracks.length === 0) {
+    return (
+      <section className="mb-8">
+        <h2 className="text-lg md:text-2xl font-semibold text-white mb-4">{title}</h2>
+        <EmptyFilterState message={`Nenhum resultado encontrado para "${category.name}".`} />
+      </section>
+    );
+  }
+
+  return <MusicSection title={title} tracks={genreTracks} />;
+}
+
 export function Home() {
   const {
     searchQuery, activePlaylistId,
@@ -664,6 +725,7 @@ export function Home() {
   const [renameModalOpen, setRenameModalOpen] = useState(false);
   const [addSongModalOpen, setAddSongModalOpen] = useState(false);
   const [contextMenu, setContextMenu] = useState<{ track: Track; x: number; y: number } | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
 
   const activePlaylist = activePlaylistId ? playlists.find(p => p.id === activePlaylistId) : null;
 
@@ -834,11 +896,12 @@ export function Home() {
       <div className="flex-1 min-h-0 overflow-y-auto px-3 md:px-6 pb-32 md:pb-4">
         {!searchQuery && (
           <div className="flex gap-2 py-4 overflow-x-auto no-scrollbar">
-            {categories.map((cat, i) => (
+            {categories.map((cat) => (
               <button
                 key={cat.id}
+                onClick={() => setSelectedCategory((prev) => (prev?.id === cat.id ? null : cat))}
                 className={`flex-shrink-0 px-4 py-1.5 min-h-[44px] rounded-lg text-xs md:text-sm font-medium transition-colors ${
-                  i === 0
+                  selectedCategory?.id === cat.id
                     ? 'bg-white text-yt-black'
                     : 'bg-yt-pill text-white/80 hover:bg-yt-surface-hover'
                 }`}
@@ -875,6 +938,8 @@ export function Home() {
           </div>
         ) : searchQuery ? (
           <SearchResults query={searchQuery} searchResults={searchResults} isSearchingTracks={isSearching} />
+        ) : selectedCategory ? (
+          <CategoryResults category={selectedCategory} />
         ) : (
           <>
             {isLoadingTrending || isLoadingPersonalized ? (
