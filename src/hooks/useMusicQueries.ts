@@ -3,6 +3,9 @@ import {
   fetchGlobalTrending,
   searchTracks,
   searchArtists,
+  searchPlaylists,
+  searchAlbums,
+  searchPodcasts,
   fetchGenreTracks,
   fetchArtistById,
   fetchArtistTopTracks,
@@ -59,6 +62,53 @@ export function useSearchArtist(query: string) {
       const results = await searchArtists(query);
       return results[0] || null;
     },
+    enabled: query.trim().length > 0,
+  });
+}
+
+/**
+ * Lista de artistas correspondentes a uma pesquisa, usada pelo filtro "Artistas"
+ * na tela de resultados de pesquisa.
+ */
+export function useSearchArtistsList(query: string) {
+  return useQuery({
+    queryKey: ['searchArtistsList', query],
+    queryFn: () => searchArtists(query, 24),
+    enabled: query.trim().length > 0,
+  });
+}
+
+/**
+ * Playlists públicas correspondentes a uma pesquisa, usada pelo filtro
+ * "Playlists em destaque".
+ */
+export function useSearchPlaylists(query: string) {
+  return useQuery({
+    queryKey: ['searchPlaylists', query],
+    queryFn: () => searchPlaylists(query),
+    enabled: query.trim().length > 0,
+  });
+}
+
+/**
+ * Álbuns correspondentes a uma pesquisa, usada pelo filtro "Álbuns" quando a
+ * busca não corresponde a um artista específico.
+ */
+export function useSearchAlbums(query: string) {
+  return useQuery({
+    queryKey: ['searchAlbums', query],
+    queryFn: () => searchAlbums(query),
+    enabled: query.trim().length > 0,
+  });
+}
+
+/**
+ * Podcasts correspondentes a uma pesquisa, usada pelo filtro "Podcasts".
+ */
+export function useSearchPodcasts(query: string) {
+  return useQuery({
+    queryKey: ['searchPodcasts', query],
+    queryFn: () => searchPodcasts(query),
     enabled: query.trim().length > 0,
   });
 }

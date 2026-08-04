@@ -215,18 +215,135 @@ const mapArtistSearchResult = (artist: any): DeezerArtistSearchResult => ({
 
 /**
  * Pesquisa artistas pelo texto livre. Usado para destacar o artista mais
- * relevante (top result) na tela de resultados de pesquisa, no estilo YT Music.
+ * relevante (top result) na tela de resultados de pesquisa, no estilo YT Music,
+ * e também para alimentar a grade do filtro "Artistas".
  */
-export const searchArtists = async (query: string): Promise<DeezerArtistSearchResult[]> => {
+export const searchArtists = async (query: string, limit = 5): Promise<DeezerArtistSearchResult[]> => {
   if (!query) return [];
 
   try {
-    const data = await fetchDeezerJson(`${BASE_URL}/search/artist?q=${encodeURIComponent(query)}&limit=5`);
+    const data = await fetchDeezerJson(`${BASE_URL}/search/artist?q=${encodeURIComponent(query)}&limit=${limit}`);
     if (!data?.data) return [];
 
     return data.data.map(mapArtistSearchResult);
   } catch (error) {
     console.error('Erro ao pesquisar artistas no Deezer:', error);
+    return [];
+  }
+};
+
+export interface DeezerPlaylistSearchResult {
+  id: string;
+  title: string;
+  pictureMedium: string;
+  nbTracks: number;
+  creatorName: string;
+}
+
+const mapPlaylistSearchResult = (playlist: any): DeezerPlaylistSearchResult => ({
+  id: String(playlist.id),
+  title: playlist.title,
+  pictureMedium: playlist.picture_medium || playlist.picture || '',
+  nbTracks: playlist.nb_tracks || 0,
+  creatorName: playlist.user?.name || '',
+});
+
+/**
+ * Pesquisa playlists públicas pelo texto livre, para o filtro "Playlists em destaque".
+ */
+export const searchPlaylists = async (query: string, limit = 20): Promise<DeezerPlaylistSearchResult[]> => {
+  if (!query) return [];
+
+  try {
+    const data = await fetchDeezerJson(`${BASE_URL}/search/playlist?q=${encodeURIComponent(query)}&limit=${limit}`);
+    if (!data?.data) return [];
+
+    return data.data.map(mapPlaylistSearchResult);
+  } catch (error) {
+    console.error('Erro ao pesquisar playlists no Deezer:', error);
+    return [];
+  }
+};
+
+export interface DeezerAlbumSearchResult {
+  id: string;
+  title: string;
+  coverXl: string;
+  artistId: string;
+  artistName: string;
+}
+
+const mapAlbumSearchResult = (album: any): DeezerAlbumSearchResult => ({
+  id: String(album.id),
+  title: album.title,
+  coverXl: album.cover_xl || album.cover_medium || album.cover || '',
+  artistId: album.artist ? String(album.artist.id) : '',
+  artistName: album.artist?.name || '',
+});
+
+/**
+ * Pesquisa álbuns pelo texto livre, para o filtro "Álbuns" quando a busca não
+ * corresponde a um artista específico.
+ */
+export const searchAlbums = async (query: string, limit = 20): Promise<DeezerAlbumSearchResult[]> => {
+  if (!query) return [];
+
+  try {
+    const data = await fetchDeezerJson(`${BASE_URL}/search/album?q=${encodeURIComponent(query)}&limit=${limit}`);
+    if (!data?.data) return [];
+
+    return data.data.map(mapAlbumSearchResult);
+  } catch (error) {
+    console.error('Erro ao pesquisar álbuns no Deezer:', error);
+    return [];
+  }
+};
+
+export interface DeezerPodcastSearchResult {
+  id: string;
+  title: string;
+  description: string;
+  pictureMedium: string;
+  link: string;
+}
+
+const mapPodcastSearchResult = (podcast: any): DeezerPodcastSearchResult => ({
+  id: String(podcast.id),
+  title: podcast.title,
+  description: podcast.description || '',
+  pictureMedium: podcast.picture_medium || podcast.picture || '',
+  link: podcast.link || '',
+});
+
+/**
+ * Pesquisa podcasts pelo texto livre, para o filtro "Podcasts".
+ */
+export const searchPodcasts = async (query: string, limit = 20): Promise<DeezerPodcastSearchResult[]> => {
+  if (!query) return [];
+
+  try {
+    const data = await fetchDeezerJson(`${BASE_URL}/search/podcast?q=${encodeURIComponent(query)}&limit=${limit}`);
+    if (!data?.data) return [];
+
+    return data.data.map(mapPodcastSearchResult);
+  } catch (error) {
+    console.error('Erro ao pesquisar podcasts no Deezer:', error);
+    return [];
+  }
+};
+
+/**
+ * Busca as faixas de uma playlist pública (usado para tocar uma playlist
+ * inteira a partir do filtro "Playlists em destaque").
+ */
+export const fetchPlaylistTracks = async (playlistId: string, limit = 50): Promise<Track[]> => {
+  try {
+    const data = await fetchDeezerJson(`${BASE_URL}/playlist/${playlistId}/tracks?limit=${limit}`);
+    if (!data?.data) return [];
+
+    return data.data.map(mapDeezerTrack);
+  } catch (error) {
+    console.error('Erro ao buscar faixas da playlist:', error);
     return [];
   }
 };

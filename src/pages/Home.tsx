@@ -2,12 +2,31 @@ import { useRef, useState } from 'react';
 import { ChevronLeft, ChevronRight, ListPlus, MoreVertical, Music, Play, Shuffle, Trash } from 'lucide-react';
 import { usePlayerStore } from '../store/usePlayerStore';
 import { Track, getArtistName, getArtistId } from '../types/music';
+import {
+  fetchPlaylistTracks,
+  fetchAlbumTracks,
+  DeezerArtistSearchResult,
+  DeezerPlaylistSearchResult,
+  DeezerPodcastSearchResult,
+} from '../services/deezerService';
 import { TrackContextMenu } from '../components/TrackContextMenu';
 import { TrackCard } from '../components/cards/TrackCard';
 import { PlaylistModal } from '../components/PlaylistModal';
 import { AddTrackToPlaylistModal } from '../components/AddTrackToPlaylistModal';
 import { DraggableTrackRow } from '../components/DraggableTrackRow';
-import { useTrendingTracks, useSearchTracks, useSearchArtist, useArtistTopTracks, usePersonalizedTrendingTracks, useCategories } from '../hooks/useMusicQueries';
+import {
+  useTrendingTracks,
+  useSearchTracks,
+  useSearchArtist,
+  useSearchArtistsList,
+  useSearchPlaylists,
+  useSearchAlbums,
+  useSearchPodcasts,
+  useArtistTopTracks,
+  useArtistAlbums,
+  usePersonalizedTrendingTracks,
+  useCategories,
+} from '../hooks/useMusicQueries';
 import { useUserPlaylists, useFavoriteTracks, useRenamePlaylist, useDeletePlaylist, useRemoveTrackFromPlaylist, useReorderPlaylistTracks } from '../hooks/useLibraryQueries';
 import { goToArtist } from '../utils/navigation';
 
@@ -88,6 +107,136 @@ function SearchResultRow({
   );
 }
 
+function TrackRowSkeleton() {
+  return (
+    <div className="flex items-center gap-4 p-2 rounded-md animate-pulse">
+      <div className="w-10 h-10 bg-zinc-800 rounded" />
+      <div className="flex-1">
+        <div className="h-4 bg-zinc-800 rounded w-1/4 mb-2" />
+        <div className="h-3 bg-zinc-800 rounded w-1/6" />
+      </div>
+    </div>
+  );
+}
+
+function GridSkeleton({ count = 12, round = false }: { count?: number; round?: boolean }) {
+  return (
+    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 md:gap-6">
+      {Array.from({ length: count }).map((_, i) => (
+        <div key={i} className="animate-pulse">
+          <div className={`aspect-square w-full bg-zinc-800 mb-2 ${round ? 'rounded-full' : 'rounded-md'}`} />
+          <div className="h-4 bg-zinc-800 rounded w-3/4 mb-1.5" />
+          <div className="h-3 bg-zinc-800 rounded w-1/2" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function EmptyFilterState({ message }: { message: string }) {
+  return <p className="text-yt-text-secondary py-10 text-center">{message}</p>;
+}
+
+function ArtistGridCard({ artist }: { artist: DeezerArtistSearchResult }) {
+  return (
+    <button onClick={() => goToArtist(artist.id)} className="flex flex-col items-center gap-3 text-center group">
+      <div className="w-full aspect-square rounded-full overflow-hidden bg-zinc-800">
+        {artist.pictureMedium ? (
+          <img
+            src={artist.pictureMedium}
+            alt={artist.name}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center">
+            <Music className="w-8 h-8 text-white/40" />
+          </div>
+        )}
+      </div>
+      <div className="min-w-0 w-full">
+        <p className="text-sm font-medium text-white truncate">{artist.name}</p>
+        <p className="text-xs text-yt-text-secondary">Artista</p>
+      </div>
+    </button>
+  );
+}
+
+function PlaylistGridCard({ playlist, onPlay }: { playlist: DeezerPlaylistSearchResult; onPlay: () => void }) {
+  return (
+    <button onClick={onPlay} className="flex flex-col text-left group">
+      <div className="relative aspect-square w-full rounded-md overflow-hidden mb-2 bg-zinc-800">
+        {playlist.pictureMedium && (
+          <img
+            src={playlist.pictureMedium}
+            alt={playlist.title}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+          />
+        )}
+        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity duration-200">
+          <div className="w-12 h-12 rounded-full bg-black/60 flex items-center justify-center ring-1 ring-white/20">
+            <Play className="w-5 h-5 fill-white text-white ml-0.5" />
+          </div>
+        </div>
+      </div>
+      <p className="text-sm font-medium text-white truncate leading-5">{playlist.title}</p>
+      <p className="text-xs text-yt-text-secondary truncate leading-4">
+        {playlist.nbTracks} músicas{playlist.creatorName ? ` • ${playlist.creatorName}` : ''}
+      </p>
+    </button>
+  );
+}
+
+function AlbumGridCard({
+  coverUrl,
+  title,
+  subtitle,
+  onPlay,
+}: {
+  coverUrl: string;
+  title: string;
+  subtitle: string;
+  onPlay: () => void;
+}) {
+  return (
+    <button onClick={onPlay} className="flex flex-col text-left group">
+      <div className="relative aspect-square w-full rounded-md overflow-hidden mb-2 bg-zinc-800">
+        {coverUrl && (
+          <img
+            src={coverUrl}
+            alt={title}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+          />
+        )}
+        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity duration-200">
+          <div className="w-12 h-12 rounded-full bg-black/60 flex items-center justify-center ring-1 ring-white/20">
+            <Play className="w-5 h-5 fill-white text-white ml-0.5" />
+          </div>
+        </div>
+      </div>
+      <p className="text-sm font-medium text-white truncate leading-5">{title}</p>
+      <p className="text-xs text-yt-text-secondary truncate leading-4">{subtitle}</p>
+    </button>
+  );
+}
+
+function PodcastGridCard({ podcast }: { podcast: DeezerPodcastSearchResult }) {
+  return (
+    <a href={podcast.link || undefined} target="_blank" rel="noopener noreferrer" className="flex flex-col group">
+      <div className="aspect-square w-full rounded-md overflow-hidden mb-2 bg-zinc-800">
+        {podcast.pictureMedium && (
+          <img
+            src={podcast.pictureMedium}
+            alt={podcast.title}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+          />
+        )}
+      </div>
+      <p className="text-sm font-medium text-white truncate leading-5">{podcast.title}</p>
+      <p className="text-xs text-yt-text-secondary truncate leading-4">Podcast</p>
+    </a>
+  );
+}
+
 function SearchResults({ query, searchResults, isSearchingTracks }: { query: string; searchResults: Track[]; isSearchingTracks: boolean }) {
   const { setQueue, setTrack, togglePlay, isPlaying, currentTrack, shuffleQueue } = usePlayerStore();
   const [activeFilter, setActiveFilter] = useState('Tudo');
@@ -96,9 +245,40 @@ function SearchResults({ query, searchResults, isSearchingTracks }: { query: str
   const { data: artist, isLoading: isLoadingArtist } = useSearchArtist(query);
   const { data: artistTopTracks = [], isLoading: isLoadingArtistTracks } = useArtistTopTracks(artist?.id ?? null);
 
+  const { data: artistsList = [], isLoading: isLoadingArtistsList } = useSearchArtistsList(
+    activeFilter === 'Artistas' ? query : ''
+  );
+  const { data: playlists = [], isLoading: isLoadingPlaylists } = useSearchPlaylists(
+    activeFilter === 'Playlists em destaque' ? query : ''
+  );
+  const { data: artistAlbums, isLoading: isLoadingArtistAlbums } = useArtistAlbums(
+    activeFilter === 'Álbuns' ? artist?.id ?? null : null
+  );
+  const { data: searchedAlbums = [], isLoading: isLoadingSearchedAlbums } = useSearchAlbums(
+    activeFilter === 'Álbuns' && !artist ? query : ''
+  );
+  const { data: podcasts = [], isLoading: isLoadingPodcasts } = useSearchPodcasts(
+    activeFilter === 'Podcasts' ? query : ''
+  );
+
   const heroTracks = artistTopTracks.slice(0, 3);
   const heroTrackIds = new Set(heroTracks.map((t) => t.id));
   const otherResults = artist ? searchResults.filter((t) => !heroTrackIds.has(t.id)) : searchResults;
+
+  const albumsForGrid = artist
+    ? [...(artistAlbums?.albums ?? []), ...(artistAlbums?.singles ?? [])].map((a) => ({
+        id: a.id,
+        coverUrl: a.coverXl,
+        title: a.title,
+        subtitle: a.releaseYear,
+      }))
+    : searchedAlbums.map((a) => ({
+        id: a.id,
+        coverUrl: a.coverXl,
+        title: a.title,
+        subtitle: a.artistName,
+      }));
+  const isLoadingAlbumsGrid = artist ? isLoadingArtistAlbums : isLoadingSearchedAlbums;
 
   const handleContextMenu = (e: React.MouseEvent, track: Track) => {
     e.preventDefault();
@@ -128,8 +308,221 @@ function SearchResults({ query, searchResults, isSearchingTracks }: { query: str
     setTrack(artistTopTracks[0]);
   };
 
+  const handlePlayPlaylist = async (playlistId: string) => {
+    const tracks = await fetchPlaylistTracks(playlistId);
+    if (tracks.length === 0) return;
+    setQueue(tracks);
+    setTrack(tracks[0]);
+  };
+
+  const handlePlayAlbum = async (albumId: string) => {
+    const tracks = await fetchAlbumTracks(albumId);
+    if (tracks.length === 0) return;
+    setQueue(tracks);
+    setTrack(tracks[0]);
+  };
+
   const nothingFound =
     !isLoadingArtist && !isLoadingArtistTracks && !isSearchingTracks && !artist && otherResults.length === 0;
+
+  const renderFilteredContent = () => {
+    switch (activeFilter) {
+      case 'Artistas':
+        return isLoadingArtistsList ? (
+          <GridSkeleton round />
+        ) : artistsList.length > 0 ? (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 md:gap-6">
+            {artistsList.map((a) => (
+              <ArtistGridCard key={a.id} artist={a} />
+            ))}
+          </div>
+        ) : (
+          <EmptyFilterState message={`Nenhum artista encontrado para "${query}".`} />
+        );
+
+      case 'Playlists em destaque':
+        return isLoadingPlaylists ? (
+          <GridSkeleton />
+        ) : playlists.length > 0 ? (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 md:gap-6">
+            {playlists.map((p) => (
+              <PlaylistGridCard key={p.id} playlist={p} onPlay={() => handlePlayPlaylist(p.id)} />
+            ))}
+          </div>
+        ) : (
+          <EmptyFilterState message={`Nenhuma playlist encontrada para "${query}".`} />
+        );
+
+      case 'Músicas':
+        return isSearchingTracks ? (
+          <div className="flex flex-col gap-2">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <TrackRowSkeleton key={i} />
+            ))}
+          </div>
+        ) : searchResults.length > 0 ? (
+          <div className="flex flex-col gap-2">
+            {searchResults.map((track) => (
+              <SearchResultRow
+                key={track.id}
+                track={track}
+                isActive={currentTrack?.id === track.id}
+                onPlay={() => handlePlayTrack(track, searchResults)}
+                onContextMenu={(e) => handleContextMenu(e, track)}
+              />
+            ))}
+          </div>
+        ) : (
+          <EmptyFilterState message={`Nenhuma música encontrada para "${query}".`} />
+        );
+
+      case 'Álbuns':
+        return isLoadingAlbumsGrid ? (
+          <GridSkeleton />
+        ) : albumsForGrid.length > 0 ? (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 md:gap-6">
+            {albumsForGrid.map((a) => (
+              <AlbumGridCard
+                key={a.id}
+                coverUrl={a.coverUrl}
+                title={a.title}
+                subtitle={a.subtitle}
+                onPlay={() => handlePlayAlbum(a.id)}
+              />
+            ))}
+          </div>
+        ) : (
+          <EmptyFilterState message={`Nenhum álbum encontrado para "${query}".`} />
+        );
+
+      case 'Vídeos':
+        return <EmptyFilterState message="Nenhum resultado de vídeo encontrado." />;
+
+      case 'Podcasts':
+        return isLoadingPodcasts ? (
+          <GridSkeleton />
+        ) : podcasts.length > 0 ? (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 md:gap-6">
+            {podcasts.map((p) => (
+              <PodcastGridCard key={p.id} podcast={p} />
+            ))}
+          </div>
+        ) : (
+          <EmptyFilterState message={`Nenhum podcast encontrado para "${query}".`} />
+        );
+
+      case 'Tudo':
+      default:
+        return (
+          <>
+            {isLoadingArtist ? (
+              <section className="mb-10 grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <div className="flex items-center gap-6 p-6 rounded-xl bg-zinc-900/60 animate-pulse">
+                  <div className="w-28 h-28 md:w-32 md:h-32 rounded-full bg-zinc-800 shrink-0" />
+                  <div className="flex-1">
+                    <div className="h-6 bg-zinc-800 rounded w-2/3 mb-3" />
+                    <div className="h-4 bg-zinc-800 rounded w-1/3" />
+                  </div>
+                </div>
+              </section>
+            ) : artist ? (
+              <section className="mb-10 grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <div
+                  onClick={() => goToArtist(artist.id)}
+                  className="flex items-center gap-6 p-6 rounded-xl bg-gradient-to-br from-zinc-800/80 to-zinc-900/80 hover:from-zinc-800 hover:to-zinc-900 transition-colors cursor-pointer"
+                >
+                  <img
+                    src={artist.pictureXl || artist.pictureMedium}
+                    alt={artist.name}
+                    className="w-28 h-28 md:w-32 md:h-32 rounded-full object-cover shrink-0"
+                  />
+                  <div className="min-w-0">
+                    <p className="text-xs text-yt-text-secondary mb-1">Artista</p>
+                    <h2 className="text-xl md:text-3xl font-bold text-white truncate mb-1">{artist.name}</h2>
+                    {artist.nbFans > 0 && (
+                      <p className="text-sm text-yt-text-secondary mb-4">{formatCompact(artist.nbFans)} ouvintes mensais</p>
+                    )}
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleShuffleArtist();
+                        }}
+                        disabled={artistTopTracks.length === 0}
+                        className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-white text-black text-sm font-semibold hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <Shuffle className="w-4 h-4" />
+                        Aleatório
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleMixArtist();
+                        }}
+                        disabled={artistTopTracks.length === 0}
+                        className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/10 hover:bg-white/20 text-sm font-semibold text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <Music className="w-4 h-4" />
+                        Mix
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex flex-col justify-center gap-1">
+                  {isLoadingArtistTracks ? (
+                    Array.from({ length: 3 }).map((_, i) => (
+                      <div key={i} className="flex items-center gap-3 p-2 animate-pulse">
+                        <div className="w-10 h-10 bg-zinc-800 rounded" />
+                        <div className="flex-1">
+                          <div className="h-4 bg-zinc-800 rounded w-1/2 mb-2" />
+                          <div className="h-3 bg-zinc-800 rounded w-1/3" />
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    heroTracks.map((track) => (
+                      <SearchResultRow
+                        key={track.id}
+                        track={track}
+                        isActive={currentTrack?.id === track.id}
+                        onPlay={() => handlePlayTrack(track, artistTopTracks)}
+                        onContextMenu={(e) => handleContextMenu(e, track)}
+                      />
+                    ))
+                  )}
+                </div>
+              </section>
+            ) : null}
+
+            <section className="mb-8">
+              <h2 className="text-lg md:text-2xl font-semibold text-white mb-4">Mais resultados</h2>
+              {isSearchingTracks ? (
+                <div className="flex flex-col gap-2">
+                  {Array.from({ length: 6 }).map((_, i) => (
+                    <TrackRowSkeleton key={i} />
+                  ))}
+                </div>
+              ) : otherResults.length > 0 ? (
+                <div className="flex flex-col gap-2">
+                  {otherResults.map((track) => (
+                    <SearchResultRow
+                      key={track.id}
+                      track={track}
+                      isActive={currentTrack?.id === track.id}
+                      onPlay={() => handlePlayTrack(track, otherResults)}
+                      onContextMenu={(e) => handleContextMenu(e, track)}
+                    />
+                  ))}
+                </div>
+              ) : nothingFound ? (
+                <p className="text-yt-text-secondary">Nenhum resultado encontrado para "{query}".</p>
+              ) : null}
+            </section>
+          </>
+        );
+    }
+  };
 
   return (
     <>
@@ -149,116 +542,7 @@ function SearchResults({ query, searchResults, isSearchingTracks }: { query: str
         ))}
       </div>
 
-      {isLoadingArtist ? (
-        <section className="mb-10 grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <div className="flex items-center gap-6 p-6 rounded-xl bg-zinc-900/60 animate-pulse">
-            <div className="w-28 h-28 md:w-32 md:h-32 rounded-full bg-zinc-800 shrink-0" />
-            <div className="flex-1">
-              <div className="h-6 bg-zinc-800 rounded w-2/3 mb-3" />
-              <div className="h-4 bg-zinc-800 rounded w-1/3" />
-            </div>
-          </div>
-        </section>
-      ) : artist ? (
-        <section className="mb-10 grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <div
-            onClick={() => goToArtist(artist.id)}
-            className="flex items-center gap-6 p-6 rounded-xl bg-gradient-to-br from-zinc-800/80 to-zinc-900/80 hover:from-zinc-800 hover:to-zinc-900 transition-colors cursor-pointer"
-          >
-            <img
-              src={artist.pictureXl || artist.pictureMedium}
-              alt={artist.name}
-              className="w-28 h-28 md:w-32 md:h-32 rounded-full object-cover shrink-0"
-            />
-            <div className="min-w-0">
-              <p className="text-xs text-yt-text-secondary mb-1">Artista</p>
-              <h2 className="text-xl md:text-3xl font-bold text-white truncate mb-1">{artist.name}</h2>
-              {artist.nbFans > 0 && (
-                <p className="text-sm text-yt-text-secondary mb-4">{formatCompact(artist.nbFans)} ouvintes mensais</p>
-              )}
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleShuffleArtist();
-                  }}
-                  disabled={artistTopTracks.length === 0}
-                  className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-white text-black text-sm font-semibold hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <Shuffle className="w-4 h-4" />
-                  Aleatório
-                </button>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleMixArtist();
-                  }}
-                  disabled={artistTopTracks.length === 0}
-                  className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/10 hover:bg-white/20 text-sm font-semibold text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <Music className="w-4 h-4" />
-                  Mix
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex flex-col justify-center gap-1">
-            {isLoadingArtistTracks ? (
-              Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="flex items-center gap-3 p-2 animate-pulse">
-                  <div className="w-10 h-10 bg-zinc-800 rounded" />
-                  <div className="flex-1">
-                    <div className="h-4 bg-zinc-800 rounded w-1/2 mb-2" />
-                    <div className="h-3 bg-zinc-800 rounded w-1/3" />
-                  </div>
-                </div>
-              ))
-            ) : (
-              heroTracks.map((track) => (
-                <SearchResultRow
-                  key={track.id}
-                  track={track}
-                  isActive={currentTrack?.id === track.id}
-                  onPlay={() => handlePlayTrack(track, artistTopTracks)}
-                  onContextMenu={(e) => handleContextMenu(e, track)}
-                />
-              ))
-            )}
-          </div>
-        </section>
-      ) : null}
-
-      <section className="mb-8">
-        <h2 className="text-lg md:text-2xl font-semibold text-white mb-4">Mais resultados</h2>
-        {isSearchingTracks ? (
-          <div className="flex flex-col gap-2">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="flex items-center gap-4 p-2 rounded-md animate-pulse">
-                <div className="w-10 h-10 bg-zinc-800 rounded" />
-                <div className="flex-1">
-                  <div className="h-4 bg-zinc-800 rounded w-1/4 mb-2" />
-                  <div className="h-3 bg-zinc-800 rounded w-1/6" />
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : otherResults.length > 0 ? (
-          <div className="flex flex-col gap-2">
-            {otherResults.map((track) => (
-              <SearchResultRow
-                key={track.id}
-                track={track}
-                isActive={currentTrack?.id === track.id}
-                onPlay={() => handlePlayTrack(track, otherResults)}
-                onContextMenu={(e) => handleContextMenu(e, track)}
-              />
-            ))}
-          </div>
-        ) : nothingFound ? (
-          <p className="text-yt-text-secondary">Nenhum resultado encontrado para "{query}".</p>
-        ) : null}
-      </section>
+      {renderFilteredContent()}
 
       {contextMenu && (
         <TrackContextMenu
