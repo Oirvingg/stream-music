@@ -531,20 +531,22 @@ export function Home() {
   return (
     <main className="flex-1 min-h-0 flex flex-col overflow-hidden">
       <div className="flex-1 min-h-0 overflow-y-auto px-3 md:px-6 pb-32 md:pb-4">
-        <div className="flex gap-2 py-4 overflow-x-auto no-scrollbar">
-          {categories.map((cat, i) => (
-            <button
-              key={cat.id}
-              className={`flex-shrink-0 px-4 py-1.5 min-h-[44px] rounded-lg text-xs md:text-sm font-medium transition-colors ${
-                i === 0
-                  ? 'bg-white text-yt-black'
-                  : 'bg-yt-pill text-white/80 hover:bg-yt-surface-hover'
-              }`}
-            >
-              {cat.name}
-            </button>
-          ))}
-        </div>
+        {!searchQuery && (
+          <div className="flex gap-2 py-4 overflow-x-auto no-scrollbar">
+            {categories.map((cat, i) => (
+              <button
+                key={cat.id}
+                className={`flex-shrink-0 px-4 py-1.5 min-h-[44px] rounded-lg text-xs md:text-sm font-medium transition-colors ${
+                  i === 0
+                    ? 'bg-white text-yt-black'
+                    : 'bg-yt-pill text-white/80 hover:bg-yt-surface-hover'
+                }`}
+              >
+                {cat.name}
+              </button>
+            ))}
+          </div>
+        )}
 
         {isErrorTrending || isErrorSearch ? (
           <div className="flex flex-col items-center justify-center py-20 text-center">
