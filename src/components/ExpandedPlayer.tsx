@@ -13,9 +13,15 @@ interface LyricLine {
 }
 
 /**
+ * Peso mínimo (em "chars" equivalentes) de qualquer linha, mesmo as curtas.
+ * Valor alto o suficiente para que nenhuma linha fique ativa por menos de
+ * ~1s em uma prévia de 30s — evita que o destaque troque rápido demais.
+ */
+const MIN_LINE_WEIGHT = 16;
+
+/**
  * Distribui os tempos proporcionalmente ao peso de cada linha.
  * Linhas maiores (refrões) ficam ativas mais tempo; linhas curtas passam rápido.
- * Peso mínimo de 8 chars evita que linhas muito curtas piscarem.
  */
 function buildTimedLyrics(rawLyrics: string, durationSecs = 30): LyricLine[] {
   const lines = rawLyrics
@@ -25,7 +31,7 @@ function buildTimedLyrics(rawLyrics: string, durationSecs = 30): LyricLine[] {
 
   if (lines.length === 0) return [];
 
-  const weights = lines.map(l => Math.max(l.length, 8));
+  const weights = lines.map(l => Math.max(l.length, MIN_LINE_WEIGHT));
   const totalWeight = weights.reduce((acc, w) => acc + w, 0);
 
   let cursor = 0;
@@ -144,7 +150,8 @@ export function ExpandedPlayer({ seek }: ExpandedPlayerProps) {
     return idx;
   }, [currentTime, timedLyrics]);
 
-  // Auto-scroll suave com debounce de 300ms — evita saltos bruscos entre linhas
+  // Auto-scroll suave com amortecimento (debounce de 450ms) — evita saltos
+  // bruscos entre linhas e dá um leve atraso antes de centralizar a nova linha.
   useEffect(() => {
     if (scrollDebounceRef.current) clearTimeout(scrollDebounceRef.current);
     scrollDebounceRef.current = setTimeout(() => {
@@ -154,7 +161,7 @@ export function ExpandedPlayer({ seek }: ExpandedPlayerProps) {
           block: 'center',
         });
       }
-    }, 300);
+    }, 450);
     return () => {
       if (scrollDebounceRef.current) clearTimeout(scrollDebounceRef.current);
     };
@@ -334,7 +341,7 @@ export function ExpandedPlayer({ seek }: ExpandedPlayerProps) {
             {expandedTab === 'LYRICS' && (
               <div
                 ref={lyricsContainerRef}
-                className="flex flex-col gap-1 py-12 px-2 min-h-full overflow-y-auto [&::-webkit-scrollbar]:w-0"
+                className="flex flex-col gap-1 py-12 px-2 min-h-full overflow-y-auto scroll-smooth [&::-webkit-scrollbar]:w-0"
               >
                 {isLoadingLyrics ? (
                   <div className="flex flex-col items-center justify-center h-full space-y-4 pt-32">
@@ -362,12 +369,12 @@ export function ExpandedPlayer({ seek }: ExpandedPlayerProps) {
                         key={idx}
                         ref={isActive ? activeLineRef : null}
                         className={`
-                          px-4 py-3 rounded-xl text-left transition-all duration-500 cursor-pointer select-none
+                          px-4 py-3 rounded-xl text-left transition-all duration-[600ms] ease-in-out cursor-pointer select-none
                           ${isActive
-                            ? 'text-white text-2xl font-bold leading-snug drop-shadow-[0_0_12px_rgba(255,255,255,0.4)]'
+                            ? 'text-white text-2xl font-bold leading-snug opacity-100 drop-shadow-[0_0_12px_rgba(255,255,255,0.4)]'
                             : isPast
-                              ? 'text-[#444444] text-xl font-medium leading-snug'
-                              : 'text-[#555555] text-xl font-medium leading-snug'
+                              ? 'text-[#444444] text-xl font-medium leading-snug opacity-60'
+                              : 'text-[#555555] text-xl font-medium leading-snug opacity-40'
                           }
                         `}
                         onClick={() => seek(line.time)}
