@@ -203,6 +203,8 @@ export interface DeezerArtistSearchResult {
   pictureMedium: string;
   pictureXl: string;
   nbFans: number;
+  /** Número de álbuns/singles catalogados sob o perfil do artista no Deezer. */
+  nbAlbums: number;
 }
 
 const mapArtistSearchResult = (artist: any): DeezerArtistSearchResult => ({
@@ -211,6 +213,7 @@ const mapArtistSearchResult = (artist: any): DeezerArtistSearchResult => ({
   pictureMedium: artist.picture_medium || artist.picture || '',
   pictureXl: artist.picture_xl || artist.picture_big || artist.picture_medium || '',
   nbFans: artist.nb_fan || 0,
+  nbAlbums: artist.nb_album || 0,
 });
 
 /**

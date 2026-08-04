@@ -55,15 +55,19 @@ export function useSearchTracks(query: string) {
 }
 
 /**
- * Busca o artista mais relevante (top result) para uma pesquisa de texto,
- * usado para exibir o card de destaque de artista na tela de resultados.
+ * Busca o(s) candidato(s) a artista mais relevante(s) para uma pesquisa de
+ * texto — a confirmação de qual (se algum) deve virar o Hero Card de artista
+ * é feita por quem consome este hook, cruzando com os resultados de faixas
+ * (ver `SearchResults` em `pages/Home.tsx`), já que a busca /search/artist do
+ * Deezer é permissiva e pode retornar perfis cujo nome só coincide por acaso
+ * com um título de música (ex.: "shake it off").
  */
 export function useSearchArtist(query: string) {
   return useQuery({
     queryKey: ['searchArtist', query],
     queryFn: async () => {
       const results = await searchArtists(query);
-      return results[0] || null;
+      return results.find((artist) => artist.nbAlbums > 0) ?? null;
     },
     enabled: query.trim().length > 0,
   });

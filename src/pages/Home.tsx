@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { ChevronLeft, ChevronRight, ListPlus, MoreVertical, Music, Play, Shuffle, Trash } from 'lucide-react';
 import { usePlayerStore } from '../store/usePlayerStore';
 import { Track, getArtistName, getArtistId } from '../types/music';
@@ -261,7 +261,24 @@ function SearchResults({ query, searchResults, isSearchingTracks }: { query: str
   const [activeFilter, setActiveFilter] = useState('Tudo');
   const [contextMenu, setContextMenu] = useState<{ track: Track; x: number; y: number } | null>(null);
 
-  const { data: artist, isLoading: isLoadingArtist } = useSearchArtist(query);
+  const { data: artistCandidate, isLoading: isLoadingArtist } = useSearchArtist(query);
+
+  // A busca de artista do Deezer é permissiva e pode retornar um perfil cujo
+  // nome só coincide por acaso com o termo pesquisado (ex.: "shake it off"
+  // batendo com um artista obscuro homônimo, quando na verdade é o título de
+  // uma música). Só confirmamos o candidato como "o artista da pesquisa"
+  // quando ele também aparece de fato entre os resultados de faixas para o
+  // mesmo termo — evita o Hero Card de artista incorreto.
+  const artist = useMemo(() => {
+    if (!artistCandidate || isSearchingTracks) return null;
+    const confirmedByTracks = searchResults.some(
+      (t) => getArtistId(t.artist) === artistCandidate.id
+    );
+    return confirmedByTracks ? artistCandidate : null;
+  }, [artistCandidate, searchResults, isSearchingTracks]);
+
+  const isResolvingHeroArtist = isLoadingArtist || (!!artistCandidate && isSearchingTracks);
+
   const { data: artistTopTracks = [], isLoading: isLoadingArtistTracks } = useArtistTopTracks(artist?.id ?? null);
 
   const { data: artistsList = [], isLoading: isLoadingArtistsList } = useSearchArtistsList(
@@ -342,7 +359,7 @@ function SearchResults({ query, searchResults, isSearchingTracks }: { query: str
   };
 
   const nothingFound =
-    !isLoadingArtist && !isLoadingArtistTracks && !isSearchingTracks && !artist && otherResults.length === 0;
+    !isResolvingHeroArtist && !isLoadingArtistTracks && !isSearchingTracks && !artist && otherResults.length === 0;
 
   const renderFilteredContent = () => {
     switch (activeFilter) {
@@ -435,7 +452,7 @@ function SearchResults({ query, searchResults, isSearchingTracks }: { query: str
       default:
         return (
           <>
-            {isLoadingArtist ? (
+            {isResolvingHeroArtist ? (
               <section className="mb-10 grid grid-cols-1 lg:grid-cols-2 gap-4">
                 <div className="flex items-center gap-6 p-6 rounded-xl bg-zinc-900/60 animate-pulse">
                   <div className="w-28 h-28 md:w-32 md:h-32 rounded-full bg-zinc-800 shrink-0" />
