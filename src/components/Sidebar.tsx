@@ -3,10 +3,11 @@ import { usePlayerStore } from '../store/usePlayerStore';
 import { UserPlaylist, useUserPlaylists, useCreatePlaylist } from '../hooks/useLibraryQueries';
 import { useRequireAuth } from '../hooks/useRequireAuth';
 import { PlaylistModal } from './PlaylistModal';
+import { goToHome, goToExplore, goToLibrary } from '../utils/navigation';
 import { useState } from 'react';
 
 export function Sidebar() {
-  const { setActivePlaylistId, activePlaylistId, activePage, setActivePage, setSearchQuery } = usePlayerStore();
+  const { setActivePlaylistId, activePlaylistId, activePage } = usePlayerStore();
   const { data: playlists = [] } = useUserPlaylists();
   const createPlaylist = useCreatePlaylist();
   const requireAuth = useRequireAuth();
@@ -19,23 +20,17 @@ export function Sidebar() {
 
   const handleHomeClick = (e: React.MouseEvent) => {
     e.preventDefault();
-    setActivePlaylistId(null);
-    setSearchQuery('');
-    setActivePage('HOME');
+    goToHome();
   };
 
   const handleExploreClick = (e: React.MouseEvent) => {
     e.preventDefault();
-    setActivePlaylistId(null);
-    setSearchQuery('');
-    setActivePage('EXPLORE');
+    goToExplore();
   };
 
   const handleLibraryClick = (e: React.MouseEvent) => {
     e.preventDefault();
-    setActivePlaylistId(null);
-    setSearchQuery('');
-    setActivePage('LIBRARY');
+    goToLibrary();
   };
 
   const handleCreatePlaylist = (name: string) => {

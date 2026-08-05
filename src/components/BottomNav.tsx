@@ -1,19 +1,17 @@
 import { Home, Search, Library, User } from 'lucide-react';
 import { usePlayerStore } from '../store/usePlayerStore';
 import { useAuthStore } from '../store/useAuthStore';
-import { goToSearch } from '../utils/navigation';
+import { goToHome, goToLibrary, goToSearch } from '../utils/navigation';
 
 export function BottomNav() {
-  const { activePage, setActivePage, activePlaylistId, setActivePlaylistId, isExpanded, setSearchQuery } = usePlayerStore();
+  const { activePage, activePlaylistId, isExpanded } = usePlayerStore();
   const { isAuthenticated, setAuthModalOpen, isAuthModalOpen } = useAuthStore();
 
   // Esconde a barra inferior em modais full screen (como o player expandido)
   if (isExpanded) return null;
 
   const handleHome = () => {
-    setActivePlaylistId(null);
-    setSearchQuery('');
-    setActivePage('HOME');
+    goToHome();
   };
 
   const handleSearch = () => {
@@ -21,9 +19,7 @@ export function BottomNav() {
   };
 
   const handleLibrary = () => {
-    setActivePlaylistId(null);
-    setSearchQuery('');
-    setActivePage('LIBRARY');
+    goToLibrary();
   };
 
   const handleUser = () => {
@@ -31,9 +27,7 @@ export function BottomNav() {
       setAuthModalOpen(true, 'login');
     } else {
       // Se autenticado, pode abrir modal ou ir para biblioteca
-      setActivePlaylistId(null);
-      setSearchQuery('');
-      setActivePage('LIBRARY');
+      goToLibrary();
     }
   };
 

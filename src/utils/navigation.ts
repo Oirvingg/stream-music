@@ -83,6 +83,46 @@ export function getPlaylistIdFromPath(pathname: string): string | null {
 }
 
 /**
+ * Navega para a Home (`/`), fechando qualquer página de detalhe
+ * (artista/álbum/playlist) que esteja sobreposta — usada pelo "Início" da
+ * Sidebar e da Bottom Nav, que precisam funcionar a partir de qualquer tela.
+ */
+export function goToHome() {
+  clearDetailRoutes();
+  const store = usePlayerStore.getState();
+  store.setActivePlaylistId(null);
+  store.setSearchQuery('');
+  store.setActivePage('HOME');
+  window.history.pushState({}, '', '/');
+}
+
+/**
+ * Navega para Explorar (`/explore`), fechando qualquer página de detalhe
+ * (artista/álbum/playlist) que esteja sobreposta.
+ */
+export function goToExplore() {
+  clearDetailRoutes();
+  const store = usePlayerStore.getState();
+  store.setActivePlaylistId(null);
+  store.setSearchQuery('');
+  store.setActivePage('EXPLORE');
+  window.history.pushState({}, '', '/explore');
+}
+
+/**
+ * Navega para a Biblioteca (`/library`), fechando qualquer página de
+ * detalhe (artista/álbum/playlist) que esteja sobreposta.
+ */
+export function goToLibrary() {
+  clearDetailRoutes();
+  const store = usePlayerStore.getState();
+  store.setActivePlaylistId(null);
+  store.setSearchQuery('');
+  store.setActivePage('LIBRARY');
+  window.history.pushState({}, '', '/library');
+}
+
+/**
  * Navega para a tela dedicada de Pesquisa (`/search`), usada pela lupa da
  * Bottom Nav e pela barra de busca do Header no mobile. Distinta de
  * "Explorar" (Gêneros e Momentos).
