@@ -69,7 +69,7 @@ function App() {
   }, [user?.uid, queryClient]);
 
   return (
-    <div className="h-screen w-full flex flex-col bg-yt-black overflow-hidden relative">
+    <div className="h-dvh w-full flex flex-col bg-yt-black overflow-hidden relative">
       {/* Top area: sidebar + content */}
       <div className="flex-1 flex overflow-hidden">
         {/* Sidebar */}

@@ -37,7 +37,7 @@ export function BottomNav() {
   const isUserActive = isAuthModalOpen;
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 h-16 bg-[#0f0f0f]/95 backdrop-blur-xl border-t border-white/10 z-50 flex md:hidden items-center justify-around px-2 select-none">
+    <nav className="h-16 shrink-0 bg-[#0f0f0f]/95 backdrop-blur-xl border-t border-white/10 z-50 flex md:hidden items-center justify-around px-2 select-none">
       {/* 1. Início */}
       <button
         onClick={handleHome}
