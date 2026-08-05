@@ -9,6 +9,8 @@ interface PlayerState {
   queue: Track[];
   searchQuery: string;
   setSearchQuery: (query: string) => void;
+  homeSearchQuery: string;
+  setHomeSearchQuery: (query: string) => void;
   history: Track[]; // Histórico das últimas 20 músicas tocadas
   setTrack: (track: Track) => void;
   togglePlay: () => void;
@@ -59,6 +61,7 @@ export const usePlayerStore = create<PlayerState>()(
       volume: 1,
       queue: [],
       searchQuery: '',
+      homeSearchQuery: '',
       history: [],
       currentTime: 0,
       duration: 0,
@@ -96,6 +99,7 @@ export const usePlayerStore = create<PlayerState>()(
       setQueue: (tracks) => set({ queue: tracks }),
 
       setSearchQuery: (query) => set({ searchQuery: query }),
+      setHomeSearchQuery: (query) => set({ homeSearchQuery: query }),
 
       setActivePlaylistId: (id) => set({ activePlaylistId: id }),
       setActivePage: (page) => set({ activePage: page }),

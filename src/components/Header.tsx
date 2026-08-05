@@ -6,18 +6,18 @@ import { useAuthStore } from '../store/useAuthStore';
 export function Header() {
   const [query, setQuery] = useState('');
   const [showUserMenu, setShowUserMenu] = useState(false);
-  const { searchQuery, setSearchQuery } = usePlayerStore();
+  const { homeSearchQuery, setHomeSearchQuery } = usePlayerStore();
   const { user, isAuthenticated, setAuthModalOpen, logout } = useAuthStore();
 
   // Mantém a caixa de busca em sincronia quando a pesquisa é limpa
   // externamente (ex: ao clicar em "Início" na barra lateral).
   useEffect(() => {
-    if (searchQuery === '') setQuery('');
-  }, [searchQuery]);
+    if (homeSearchQuery === '') setQuery('');
+  }, [homeSearchQuery]);
 
   const handleSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
-      setSearchQuery(query.trim());
+      setHomeSearchQuery(query.trim());
     }
   };
 

@@ -91,6 +91,7 @@ export function goToHome() {
   clearDetailRoutes();
   const store = usePlayerStore.getState();
   store.setActivePlaylistId(null);
+  store.setHomeSearchQuery('');
   store.setActivePage('HOME');
   window.history.pushState({}, '', '/');
 }
@@ -103,6 +104,7 @@ export function goToExplore() {
   clearDetailRoutes();
   const store = usePlayerStore.getState();
   store.setActivePlaylistId(null);
+  store.setHomeSearchQuery('');
   store.setActivePage('EXPLORE');
   window.history.pushState({}, '', '/explore');
 }
@@ -115,6 +117,7 @@ export function goToLibrary() {
   clearDetailRoutes();
   const store = usePlayerStore.getState();
   store.setActivePlaylistId(null);
+  store.setHomeSearchQuery('');
   store.setActivePage('LIBRARY');
   window.history.pushState({}, '', '/library');
 }
@@ -128,6 +131,7 @@ export function goToSearch() {
   clearDetailRoutes();
   const store = usePlayerStore.getState();
   store.setActivePlaylistId(null);
+  store.setHomeSearchQuery('');
   store.setActivePage('SEARCH');
   window.history.pushState({}, '', '/search');
 }

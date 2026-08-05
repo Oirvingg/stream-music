@@ -720,12 +720,12 @@ function CategoryResults({ category }: { category: Category }) {
 
 export function Home() {
   const {
-    searchQuery, activePlaylistId,
-    setQueue, setTrack, currentTrack, history, togglePlay, setSearchQuery
+    homeSearchQuery, activePlaylistId,
+    setQueue, setTrack, currentTrack, history, togglePlay,
   } = usePlayerStore();
 
   const { data: trendingTracks = [], isLoading: isLoadingTrending, isError: isErrorTrending, refetch: refetchTrending } = useTrendingTracks();
-  const { data: searchResults = [], isLoading: isSearching, isError: isErrorSearch, refetch: refetchSearch } = useSearchTracks(searchQuery);
+  const { data: searchResults = [], isLoading: isSearching, isError: isErrorSearch, refetch: refetchSearch } = useSearchTracks(homeSearchQuery);
   const { data: categories = [] } = useCategories();
 
   const lastfmUsername = localStorage.getItem('lastfmUsername');
@@ -910,7 +910,7 @@ export function Home() {
   return (
     <main className="flex-1 min-h-0 flex flex-col overflow-hidden">
       <div className="flex-1 min-h-0 overflow-y-auto px-3 md:px-6 pb-32 md:pb-4">
-        {!searchQuery && (
+        {!homeSearchQuery && (
           <div className="flex gap-2 py-4 overflow-x-auto no-scrollbar" data-tour="mood-filters">
             {/* Atalho para "Explorar" (Gêneros e Momentos) — só no mobile,
                 já que a Sidebar com esse link fica oculta em telas pequenas. */}
@@ -953,7 +953,7 @@ export function Home() {
             </p>
             <button 
               onClick={() => {
-                if (searchQuery) refetchSearch();
+                if (homeSearchQuery) refetchSearch();
                 else refetchTrending();
               }}
               className="px-6 py-2 bg-white text-black font-medium rounded-full hover:bg-gray-200 transition-colors"
@@ -961,8 +961,8 @@ export function Home() {
               Tentar novamente
             </button>
           </div>
-        ) : searchQuery ? (
-          <SearchResults query={searchQuery} searchResults={searchResults} isSearchingTracks={isSearching} />
+        ) : homeSearchQuery ? (
+          <SearchResults query={homeSearchQuery} searchResults={searchResults} isSearchingTracks={isSearching} />
         ) : selectedCategory ? (
           <CategoryResults category={selectedCategory} />
         ) : (
