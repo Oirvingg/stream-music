@@ -11,6 +11,7 @@ import {
 } from '../services/deezerService';
 import { TrackContextMenu } from '../components/TrackContextMenu';
 import { TrackCard } from '../components/cards/TrackCard';
+import { JukeboxGrid } from '../components/JukeboxGrid';
 import { PlaylistModal } from '../components/PlaylistModal';
 import { AddTrackToPlaylistModal } from '../components/AddTrackToPlaylistModal';
 import { DraggableTrackRow } from '../components/DraggableTrackRow';
@@ -967,13 +968,22 @@ export function Home() {
           <CategoryResults category={selectedCategory} />
         ) : (
           <>
-            {isLoadingTrending || isLoadingPersonalized ? (
-              <MusicSectionSkeleton title="Em Alta" />
-            ) : personalizedData && personalizedData.tracks.length > 0 ? (
-              <MusicSection title={`Recomendado: ${personalizedData.sourceArtist}`} tracks={personalizedData.tracks} />
-            ) : trendingTracks.length > 0 ? (
-              <MusicSection title="Em Alta" tracks={trendingTracks} />
-            ) : null}
+            {/* Mobile: Jukebox digital (grid 3x3 estilo "Quick Picks") */}
+            <JukeboxGrid
+              tracks={personalizedData && personalizedData.tracks.length > 0 ? personalizedData.tracks : trendingTracks}
+              isLoading={isLoadingTrending || isLoadingPersonalized}
+            />
+
+            {/* Desktop: seção horizontal tradicional (comportamento original preservado) */}
+            <div className="hidden md:block">
+              {isLoadingTrending || isLoadingPersonalized ? (
+                <MusicSectionSkeleton title="Em Alta" />
+              ) : personalizedData && personalizedData.tracks.length > 0 ? (
+                <MusicSection title={`Recomendado: ${personalizedData.sourceArtist}`} tracks={personalizedData.tracks} />
+              ) : trendingTracks.length > 0 ? (
+                <MusicSection title="Em Alta" tracks={trendingTracks} />
+              ) : null}
+            </div>
 
             {listenAgainTracks.length > 0 && (
               <MusicSection title="Ouvir de novo" tracks={listenAgainTracks} />
