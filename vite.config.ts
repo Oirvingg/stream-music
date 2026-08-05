@@ -45,6 +45,10 @@ export default defineConfig(({ mode }) => {
           target: `http://localhost:${env.PORT || 3000}`,
           changeOrigin: true,
         },
+        '/api/lyrics': {
+          target: `http://localhost:${env.PORT || 3000}`,
+          changeOrigin: true,
+        },
       },
     },
   };

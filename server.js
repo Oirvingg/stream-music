@@ -8,6 +8,7 @@ import authRoutes from './routes/auth.js';
 import playlistsRoutes from './routes/playlists.js';
 import favoritesRoutes from './routes/favorites.js';
 import categoriesRoutes from './routes/categories.js';
+import lyricsRoutes from './routes/lyrics.js';
 import { authenticate } from './middleware/authenticate.js';
 
 const app = express();
@@ -99,6 +100,7 @@ app.use('/songs', songsRoutes);
 app.use('/api/playlists', authenticate, playlistsRoutes);
 app.use('/api/user/favorites', authenticate, favoritesRoutes);
 app.use('/api/categories', categoriesRoutes);
+app.use('/api/lyrics', lyricsRoutes);
 
 // Rota inicial de verificação
 app.get('/', (req, res) => {

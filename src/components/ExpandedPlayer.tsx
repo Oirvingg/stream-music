@@ -4,7 +4,7 @@ import {
   Cast, MoreVertical, Star, Shuffle, PlaySquare, ListPlus, Bookmark, Download, Share2,
 } from 'lucide-react';
 import { usePlayerStore } from '../store/usePlayerStore';
-import { fetchLyrics } from '../services/lyricsService';
+import { useLyrics } from '../hooks/useLyrics';
 import { DraggableTrackRow } from './DraggableTrackRow';
 import { MobileLyricsView } from './MobileLyricsView';
 import { AudioVisualizer } from './AudioVisualizer';
@@ -51,18 +51,6 @@ function buildTimedLyrics(rawLyrics: string, durationSecs = 30): LyricLine[] {
   });
 }
 
-const INSTRUMENTAL_PHRASES = [
-  'instrumental',
-  'indisponível',
-  'unavailable',
-  'lyrics not found',
-];
-
-function isInstrumental(text: string) {
-  const lower = text.toLowerCase();
-  return INSTRUMENTAL_PHRASES.some(p => lower.includes(p));
-}
-
 /**
  * Dicionário estático com timestamps hand-calibrados para faixas de portfólio.
  * Garante sincronização perfeita independente do retorno da API de letras.
@@ -101,8 +89,7 @@ export function ExpandedPlayer({ seek }: ExpandedPlayerProps) {
 
   const isMobile = useIsMobile();
 
-  const [rawLyrics, setRawLyrics] = useState<string>('');
-  const [isLoadingLyrics, setIsLoadingLyrics] = useState<boolean>(false);
+  const { syncedLines, plainLyrics, isLoading: isLoadingLyrics } = useLyrics(currentTrack);
   const lyricsContainerRef = useRef<HTMLDivElement>(null);
   const activeLineRef = useRef<HTMLDivElement>(null);
   const scrollDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -115,37 +102,8 @@ export function ExpandedPlayer({ seek }: ExpandedPlayerProps) {
   const { data: likedTracks = [] } = useFavoriteTracks();
   const toggleFavoriteTrack = useToggleFavoriteTrack();
 
-  useEffect(() => {
-    if (!currentTrack) {
-      setRawLyrics('');
-      return;
-    }
-
-    const artist = getArtistName(currentTrack.artist);
-    const title = currentTrack.title;
-
-    let isMounted = true;
-    setIsLoadingLyrics(true);
-    setRawLyrics('');
-
-    fetchLyrics(artist, title)
-      .then((res) => {
-        if (isMounted) {
-          setRawLyrics(res);
-          setIsLoadingLyrics(false);
-        }
-      })
-      .catch(() => {
-        if (isMounted) {
-          setRawLyrics('Letra instrumental ou indisponível para esta faixa no momento.');
-          setIsLoadingLyrics(false);
-        }
-      });
-
-    return () => { isMounted = false; };
-  }, [currentTrack]);
-
-  // 1. Verifica dicionário estático; 2. Fallback: distribuição proporcional por chars
+  // 1. Verifica dicionário estático; 2. Linhas sincronizadas (LRCLIB);
+  // 3. Fallback: distribuição proporcional por chars da letra plana
   const timedLyrics = useMemo<LyricLine[]>(() => {
     if (!currentTrack) return [];
 
@@ -154,10 +112,12 @@ export function ExpandedPlayer({ seek }: ExpandedPlayerProps) {
       return STATIC_LYRICS_MAP[titleKey];
     }
 
-    if (!rawLyrics || isInstrumental(rawLyrics)) return [];
+    if (syncedLines && syncedLines.length > 0) return syncedLines;
+
+    if (!plainLyrics) return [];
     const dur = duration > 5 ? duration : 30;
-    return buildTimedLyrics(rawLyrics, dur);
-  }, [rawLyrics, duration, currentTrack]);
+    return buildTimedLyrics(plainLyrics, dur);
+  }, [syncedLines, plainLyrics, duration, currentTrack]);
 
   // Índice da linha ativa com base no currentTime
   const activeIndex = useMemo(() => {
