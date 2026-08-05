@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { usePlayerStore } from '../store/usePlayerStore';
 import { useLyrics } from '../hooks/useLyrics';
+import { useAutoScrollActiveLine } from '../hooks/useAutoScrollActiveLine';
 import { DraggableTrackRow } from './DraggableTrackRow';
 import { MobileLyricsView } from './MobileLyricsView';
 import { AudioVisualizer } from './AudioVisualizer';
@@ -91,8 +92,6 @@ export function ExpandedPlayer({ seek }: ExpandedPlayerProps) {
 
   const { syncedLines, plainLyrics, isLoading: isLoadingLyrics } = useLyrics(currentTrack);
   const lyricsContainerRef = useRef<HTMLDivElement>(null);
-  const activeLineRef = useRef<HTMLDivElement>(null);
-  const scrollDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const mobileTabContentRef = useRef<HTMLDivElement>(null);
 
   const [menuOpen, setMenuOpen] = useState(false);
@@ -129,22 +128,10 @@ export function ExpandedPlayer({ seek }: ExpandedPlayerProps) {
     return idx;
   }, [currentTime, timedLyrics]);
 
-  // Auto-scroll suave com amortecimento (debounce de 450ms) — evita saltos
-  // bruscos entre linhas e dá um leve atraso antes de centralizar a nova linha.
-  useEffect(() => {
-    if (scrollDebounceRef.current) clearTimeout(scrollDebounceRef.current);
-    scrollDebounceRef.current = setTimeout(() => {
-      if (activeLineRef.current) {
-        activeLineRef.current.scrollIntoView({
-          behavior: 'smooth',
-          block: 'center',
-        });
-      }
-    }, 450);
-    return () => {
-      if (scrollDebounceRef.current) clearTimeout(scrollDebounceRef.current);
-    };
-  }, [activeIndex]);
+  // Rola instantaneamente na primeira linha ativa de cada faixa/letra
+  // (`timedLyrics` como resetKey); trocas de linha seguintes usam scroll
+  // suave com pequeno debounce, evitando saltos bruscos entre versos.
+  const activeLineRef = useAutoScrollActiveLine(activeIndex, timedLyrics);
 
   const formatTime = (sec: number) => {
     if (sec === undefined || sec === null || isNaN(sec)) return "0:00";

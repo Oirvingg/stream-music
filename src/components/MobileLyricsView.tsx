@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { X, Play, Pause, SkipBack, SkipForward, Music2 } from 'lucide-react';
 import { getCoverGradient } from '../utils/coverColor';
+import { useAutoScrollActiveLine } from '../hooks/useAutoScrollActiveLine';
 import type { Track } from '../types/music';
 
 interface LyricLine {
@@ -28,8 +29,10 @@ export function MobileLyricsView({
   isLoadingLyrics, timedLyrics, activeIndex, seek, onClose,
 }: MobileLyricsViewProps) {
   const [gradient, setGradient] = useState(FALLBACK_GRADIENT);
-  const activeLineRef = useRef<HTMLDivElement>(null);
-  const scrollDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Rola instantaneamente na primeira linha ativa de cada faixa (`track.id`
+  // como resetKey, já que este componente pode permanecer montado ao trocar
+  // de faixa); trocas de linha seguintes usam scroll suave com debounce.
+  const activeLineRef = useAutoScrollActiveLine(activeIndex, track.id);
 
   useEffect(() => {
     let isMounted = true;
@@ -38,16 +41,6 @@ export function MobileLyricsView({
     });
     return () => { isMounted = false; };
   }, [track.coverUrl]);
-
-  useEffect(() => {
-    if (scrollDebounceRef.current) clearTimeout(scrollDebounceRef.current);
-    scrollDebounceRef.current = setTimeout(() => {
-      activeLineRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }, 450);
-    return () => {
-      if (scrollDebounceRef.current) clearTimeout(scrollDebounceRef.current);
-    };
-  }, [activeIndex]);
 
   return (
     <div className="absolute inset-0 flex flex-col animate-fade-in">
