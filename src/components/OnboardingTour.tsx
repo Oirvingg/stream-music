@@ -47,16 +47,33 @@ function waitForElement(selector: string, timeoutMs: number): Promise<void> {
  * spotlight aparecer. `navigatedToArtistRef` registra se navegamos para uma
  * página de artista, para poder voltar ao Início quando o tour terminar.
  */
+/** Garante que todo passo espere seu alvo existir no DOM antes de o Joyride
+ * calcular a posição do spotlight — evita o evento `TARGET_NOT_FOUND` nos
+ * passos que não têm um hook `before` próprio (ex: navegação ainda em
+ * andamento, dados assíncronos ainda não renderizados). Passos que já
+ * definem seu próprio `before` (Letra, Catálogo Completo) mantêm o
+ * comportamento customizado — não é sobrescrito aqui. */
+function withTargetGuard(step: Step): Step {
+  if (step.before || typeof step.target !== 'string') return step;
+  const target = step.target;
+  const timeout = step.targetWaitTimeout ?? 4000;
+  return {
+    ...step,
+    before: () => waitForElement(target, timeout),
+  };
+}
+
 function buildSteps(
   trendingArtistIdRef: { current: string | null },
   navigatedToArtistRef: { current: boolean }
 ): Step[] {
-  return [
+  const steps: Step[] = [
     {
       target: '[data-tour="search-bar"]',
       title: 'Encontre sua vibe',
       content: 'Pesquise por artistas, músicas ou álbuns usando o poder das APIs Deezer e Last.fm.',
       placement: 'bottom',
+      skipBeacon: true,
     },
     {
       target: '[data-tour="mood-filters"]',
@@ -64,18 +81,21 @@ function buildSteps(
       content: 'Use os filtros rápidos para encontrar playlists perfeitas para treinar, relaxar ou festejar.',
       placement: 'bottom',
       targetWaitTimeout: 5000,
+      skipBeacon: true,
     },
     {
       target: '[data-tour="sidebar-library"]',
       title: 'Sua Coleção',
       content: 'Aqui você acessa suas músicas curtidas, artistas favoritos e as playlists que você criar.',
       placement: 'right',
+      skipBeacon: true,
     },
     {
       target: '[data-tour="player-bar"]',
       title: 'Controle Total',
       content: 'Ouça prévias de 30s, controle o volume e gerencie sua fila de reprodução em tempo real.',
       placement: 'top',
+      skipBeacon: true,
     },
     {
       target: LYRICS_TARGET,
@@ -83,9 +103,11 @@ function buildSteps(
       content: 'Experimente nossa tela de letras com transições suaves de CSS para uma experiência imersiva.',
       placement: 'top',
       targetWaitTimeout: 3000,
+      skipBeacon: true,
       before: async () => {
         usePlayerStore.setState({ expandedTab: 'LYRICS', isExpanded: true });
         await wait(600); // aguarda a transição de slide-up (500ms) assentar
+        await waitForElement(LYRICS_TARGET, 3000);
       },
       after: () => {
         usePlayerStore.setState({ isExpanded: false });
@@ -98,6 +120,7 @@ function buildSteps(
       placement: 'auto',
       targetWaitTimeout: 3000,
       beforeTimeout: 12000,
+      skipBeacon: true,
       before: async () => {
         usePlayerStore.setState({ isExpanded: false });
         const artistId = trendingArtistIdRef.current;
@@ -109,6 +132,8 @@ function buildSteps(
       },
     },
   ];
+
+  return steps.map(withTargetGuard);
 }
 
 /**

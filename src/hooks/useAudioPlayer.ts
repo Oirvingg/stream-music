@@ -3,6 +3,31 @@ import { usePlayerStore } from '../store/usePlayerStore';
 
 export let globalAnalyser: AnalyserNode | null = null;
 
+const PREVIEW_UNAVAILABLE_MSG = 'Prévia indisponível para esta faixa';
+
+/** Mostra o toast de feedback já existente no PlayerBar e o limpa sozinho
+ * (o store não expira essa mensagem automaticamente). */
+function showTransientFeedback(msg: string, durationMs = 3000) {
+  usePlayerStore.getState().setFeedbackMessage(msg);
+  setTimeout(() => {
+    if (usePlayerStore.getState().feedbackMessage === msg) {
+      usePlayerStore.getState().setFeedbackMessage(null);
+    }
+  }, durationMs);
+}
+
+/** Tenta reproduzir o áudio sem nunca deixar uma Promise rejeitada escapar
+ * (ex: NotAllowedError da política de autoplay). Em caso de falha, reverte
+ * `isPlaying` para refletir a realidade (o áudio não está de fato tocando). */
+async function safePlay(audio: HTMLAudioElement) {
+  try {
+    await audio.play();
+  } catch (err) {
+    console.warn('Reprodução bloqueada ou falhou:', err);
+    usePlayerStore.setState({ isPlaying: false });
+  }
+}
+
 export function useAudioPlayer() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const currentTrack = usePlayerStore((state) => state.currentTrack);
@@ -30,7 +55,10 @@ export function useAudioPlayer() {
 
           const resumeAudio = () => {
             if (audioCtx.state === 'suspended') {
-              audioCtx.resume();
+              audioCtx.resume().catch(() => {
+                // Retomada do AudioContext é apenas para o visualizador;
+                // falhar aqui não deve afetar a reprodução do áudio.
+              });
             }
           };
           audio.addEventListener('play', resumeAudio);
@@ -50,15 +78,25 @@ export function useAudioPlayer() {
     const handleEnded = () => {
       usePlayerStore.getState().nextTrack();
     };
+    /** Falha de carregamento real (404, CORS, URL de prévia expirada, etc.) —
+     * evita deixar a UI "travada" em estado de play sem áudio nenhum. */
+    const handleError = () => {
+      const track = usePlayerStore.getState().currentTrack;
+      console.warn(`Falha ao carregar áudio da faixa "${track?.title ?? 'desconhecida'}"`, audio.error);
+      usePlayerStore.setState({ isPlaying: false });
+      showTransientFeedback(PREVIEW_UNAVAILABLE_MSG);
+    };
 
     audio.addEventListener("timeupdate", handleTimeUpdate);
     audio.addEventListener("loadedmetadata", handleLoadedMetadata);
     audio.addEventListener("ended", handleEnded);
+    audio.addEventListener("error", handleError);
 
     return () => {
       audio.removeEventListener("timeupdate", handleTimeUpdate);
       audio.removeEventListener("loadedmetadata", handleLoadedMetadata);
       audio.removeEventListener("ended", handleEnded);
+      audio.removeEventListener("error", handleError);
     };
   }, []);
 
@@ -69,23 +107,22 @@ export function useAudioPlayer() {
     if (audio && currentTrack) {
       if (!currentTrack.audioUrl || currentTrack.audioUrl.trim() === '') {
         console.warn(`Track "${currentTrack.title}" has no valid audio URL`);
+        usePlayerStore.setState({ isPlaying: false });
+        showTransientFeedback(PREVIEW_UNAVAILABLE_MSG);
         return;
       }
-      
+
       if (trackIdRef.current !== currentTrack.id) {
         audio.src = currentTrack.audioUrl;
         trackIdRef.current = currentTrack.id;
         audio.load();
-        
+
         if (isPlaying) {
-          const playPromise = audio.play();
-          if (playPromise !== undefined) {
-             playPromise.catch(console.error);
-          }
+          safePlay(audio);
         }
       } else {
         if (isPlaying) {
-          audio.play().catch(console.error);
+          safePlay(audio);
         } else {
           audio.pause();
         }
