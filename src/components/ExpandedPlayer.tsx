@@ -194,8 +194,8 @@ export function ExpandedPlayer({ seek }: ExpandedPlayerProps) {
       }`}
     >
       {/* Top Navbar */}
-      <div className="flex items-center justify-between p-6 shrink-0">
-        <button 
+      <div className="flex items-center justify-between p-4 md:p-6 shrink-0">
+        <button
           onClick={toggleExpand}
           className="p-2 text-white/70 hover:text-white transition-colors rounded-full hover:bg-white/10"
         >
@@ -204,12 +204,12 @@ export function ExpandedPlayer({ seek }: ExpandedPlayerProps) {
       </div>
 
       {/* Main Content Area */}
-      <div className="flex-1 flex overflow-hidden px-8 pb-4">
-        
+      <div className="flex-1 flex flex-col md:flex-row overflow-hidden px-4 md:px-8 pb-4 gap-6 md:gap-0">
+
         {/* Left Column: Artwork & Info */}
-        <div className="flex-1 flex flex-col items-center justify-center p-8 min-w-0">
+        <div className="shrink-0 flex flex-col items-center justify-center p-4 md:flex-1 md:p-8 md:min-w-0">
           {currentTrack && (
-            <div className="w-full max-w-[500px] flex flex-col gap-8 mt-auto mb-auto relative">
+            <div className="w-full max-w-[280px] md:max-w-[500px] flex flex-col gap-6 md:gap-8 mx-auto md:mt-auto md:mb-auto relative">
               <div className="relative w-full aspect-square">
                 <img 
                   src={currentTrack.coverUrl} 
@@ -257,7 +257,7 @@ export function ExpandedPlayer({ seek }: ExpandedPlayerProps) {
         </div>
 
         {/* Right Column: Tabs & Content */}
-        <div className="w-[400px] lg:w-[500px] flex flex-col pt-8 shrink-0">
+        <div className="w-full flex-1 min-h-0 flex flex-col pt-2 md:w-[400px] md:pt-8 md:shrink-0 md:flex-none lg:w-[500px]">
           {/* Tabs */}
           <div className="flex gap-6 border-b border-white/10 pb-2 mb-4 shrink-0">
             {(['A SEGUIR', 'LETRA', 'RELACIONADOS'] as const).map((tab, idx) => {
@@ -398,7 +398,7 @@ export function ExpandedPlayer({ seek }: ExpandedPlayerProps) {
       </div>
 
       {/* Embedded Player Footer */}
-      <div className="shrink-0 px-8 py-8 flex flex-col gap-6">
+      <div className="shrink-0 px-4 md:px-8 py-4 md:py-8 flex flex-col gap-6">
         {/* Seekbar */}
         <div className="flex items-center gap-4">
           <span className="text-xs text-yt-text-secondary font-medium tabular-nums w-10 text-right">
@@ -446,7 +446,7 @@ export function ExpandedPlayer({ seek }: ExpandedPlayerProps) {
           </div>
 
           {/* Right Controls */}
-          <div className="flex items-center justify-end gap-4 w-1/3">
+          <div className="invisible md:visible flex items-center justify-end gap-4 w-1/3">
             <button
               onClick={() => setVolume(volume === 0 ? 1 : 0)}
               className="p-2 text-white/60 hover:text-white transition-colors"
