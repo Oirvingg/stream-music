@@ -12,7 +12,8 @@ export interface LyricsResult {
 }
 
 interface LyricsApiResponse {
-  source: 'lrclib' | 'lyrics.ovh';
+  /** `null` quando nenhuma API encontrou a letra (estado normal, não é erro). */
+  source: 'lrclib' | 'lyrics.ovh' | null;
   plainLyrics: string | null;
   syncedLyrics: string | null;
 }

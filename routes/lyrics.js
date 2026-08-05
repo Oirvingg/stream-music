@@ -73,10 +73,14 @@ async function fetchFromLyricsOvh(title, artist) {
  *           type: string
  *     responses:
  *       200:
- *         description: Letra encontrada em uma das APIs
- *       404:
- *         description: Letra não encontrada em nenhuma das APIs
+ *         description: >
+ *           Sempre 200. Quando nenhuma API encontra a letra, retorna
+ *           `{ source: null, plainLyrics: null, syncedLyrics: null }` em vez
+ *           de um status de erro, para não gerar ruído de "404/502" no
+ *           console do cliente para o caso normal de "sem letra disponível".
  */
+const NOT_FOUND_RESULT = { source: null, plainLyrics: null, syncedLyrics: null };
+
 router.get('/', async (req, res) => {
   const title = typeof req.query.title === 'string' ? req.query.title.trim() : '';
   const artist = typeof req.query.artist === 'string' ? req.query.artist.trim() : '';
@@ -95,14 +99,20 @@ router.get('/', async (req, res) => {
     const result = (await fetchFromLrclib(title, artist)) || (await fetchFromLyricsOvh(title, artist));
 
     if (!result) {
-      return res.status(404).json({ message: 'Letra instrumental ou indisponível no momento.' });
+      // Não é um erro: significa que nenhuma API tem a letra desta faixa.
+      // Devolvemos 200 com payload vazio para o cliente tratar como estado
+      // "letra indisponível", sem log de erro no console do navegador.
+      setCached(cacheKey, NOT_FOUND_RESULT);
+      return res.json(NOT_FOUND_RESULT);
     }
 
     setCached(cacheKey, result);
     res.json(result);
   } catch (error) {
+    // Falha real de rede/upstream: logamos no servidor, mas ainda assim
+    // respondemos 200 com payload vazio para não quebrar o fluxo do player.
     console.error('Erro ao buscar letra:', error);
-    res.status(502).json({ message: 'Falha ao buscar letra da música.' });
+    res.json(NOT_FOUND_RESULT);
   }
 });
 
