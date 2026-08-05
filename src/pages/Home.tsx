@@ -30,7 +30,7 @@ import {
   useTrendingPodcasts,
 } from '../hooks/useMusicQueries';
 import { useUserPlaylists, useFavoriteTracks, useRenamePlaylist, useDeletePlaylist, useRemoveTrackFromPlaylist, useReorderPlaylistTracks } from '../hooks/useLibraryQueries';
-import { goToArtist, goToAlbum, goToPlaylist } from '../utils/navigation';
+import { goToArtist, goToAlbum, goToPlaylist, goToExplore } from '../utils/navigation';
 import { Category } from '../services/categoriesService';
 
 const SEARCH_FILTERS = ['Tudo', 'Artistas', 'Playlists em destaque', 'Músicas', 'Álbuns', 'Vídeos', 'Podcasts'];
@@ -257,8 +257,7 @@ function PodcastGridCard({ podcast }: { podcast: DeezerPodcastSearchResult }) {
 }
 
 export function SearchResults({ query, searchResults, isSearchingTracks }: { query: string; searchResults: Track[]; isSearchingTracks: boolean }) {
-  const { setQueue, setTrack, togglePlay, isPlaying, currentTrack, shuffleQueue } = usePlayerStore();
-  const [activeFilter, setActiveFilter] = useState('Tudo');
+  const { setQueue, setTrack, togglePlay, isPlaying, currentTrack, shuffleQueue, searchActiveFilter: activeFilter, setSearchActiveFilter: setActiveFilter } = usePlayerStore();
   const [contextMenu, setContextMenu] = useState<{ track: Track; x: number; y: number } | null>(null);
 
   const { data: artistCandidate, isLoading: isLoadingArtist } = useSearchArtist(query);
@@ -916,11 +915,7 @@ export function Home() {
             {/* Atalho para "Explorar" (Gêneros e Momentos) — só no mobile,
                 já que a Sidebar com esse link fica oculta em telas pequenas. */}
             <button
-              onClick={() => {
-                usePlayerStore.getState().setActivePlaylistId(null);
-                usePlayerStore.getState().setSearchQuery('');
-                usePlayerStore.getState().setActivePage('EXPLORE');
-              }}
+              onClick={() => goToExplore()}
               className="flex md:hidden flex-shrink-0 items-center gap-1.5 px-4 py-1.5 min-h-[44px] rounded-lg text-xs font-medium bg-yt-pill text-white/80 hover:bg-yt-surface-hover transition-colors"
             >
               <Compass className="w-3.5 h-3.5" />

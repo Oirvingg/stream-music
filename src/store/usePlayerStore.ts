@@ -46,6 +46,9 @@ interface PlayerState {
 
   feedbackMessage: string | null;
   setFeedbackMessage: (msg: string | null) => void;
+
+  searchActiveFilter: string;
+  setSearchActiveFilter: (filter: string) => void;
 }
 
 export const usePlayerStore = create<PlayerState>()(
@@ -67,6 +70,7 @@ export const usePlayerStore = create<PlayerState>()(
       activeArtistId: null,
       activeAlbumId: null,
       activePublicPlaylistId: null,
+      searchActiveFilter: 'Tudo',
 
       setTrack: (track) =>
         set((state) => {
@@ -98,6 +102,7 @@ export const usePlayerStore = create<PlayerState>()(
       setActiveArtistId: (id) => set({ activeArtistId: id }),
       setActiveAlbumId: (id) => set({ activeAlbumId: id }),
       setActivePublicPlaylistId: (id) => set({ activePublicPlaylistId: id }),
+      setSearchActiveFilter: (filter) => set({ searchActiveFilter: filter }),
 
       toggleExpand: () => set((state) => ({ isExpanded: !state.isExpanded })),
       setExpandedTab: (tab) => set({ expandedTab: tab }),
