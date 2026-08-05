@@ -6,6 +6,7 @@ import {
 import { usePlayerStore } from '../store/usePlayerStore';
 import { fetchLyrics } from '../services/lyricsService';
 import { DraggableTrackRow } from './DraggableTrackRow';
+import { MobileLyricsView } from './MobileLyricsView';
 import { AudioVisualizer } from './AudioVisualizer';
 import { CardMenuDropdown, CardMenuItem } from './CardMenuDropdown';
 import { SaveToPlaylistModal } from './SaveToPlaylistModal';
@@ -105,6 +106,7 @@ export function ExpandedPlayer({ seek }: ExpandedPlayerProps) {
   const lyricsContainerRef = useRef<HTMLDivElement>(null);
   const activeLineRef = useRef<HTMLDivElement>(null);
   const scrollDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const mobileTabContentRef = useRef<HTMLDivElement>(null);
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [menuAnchor, setMenuAnchor] = useState<DOMRect | null>(null);
@@ -356,6 +358,21 @@ export function ExpandedPlayer({ seek }: ExpandedPlayerProps) {
     >
       {isMobile ? (
         <>
+          {currentTrack && expandedTab === 'LYRICS' ? (
+            <MobileLyricsView
+              track={currentTrack}
+              isPlaying={isPlaying}
+              togglePlay={togglePlay}
+              nextTrack={nextTrack}
+              prevTrack={handlePrevTrack}
+              isLoadingLyrics={isLoadingLyrics}
+              timedLyrics={timedLyrics}
+              activeIndex={activeIndex}
+              seek={seek}
+              onClose={() => setExpandedTab('QUEUE')}
+            />
+          ) : (
+            <>
           {/* Header mobile */}
           <div className="flex items-center justify-between px-2 py-3 shrink-0">
             <button
@@ -384,7 +401,7 @@ export function ExpandedPlayer({ seek }: ExpandedPlayerProps) {
           </div>
 
           {currentTrack && (
-            <div className="flex-1 flex flex-col min-h-0 px-5 pb-3">
+            <div className="flex-1 flex flex-col min-h-0 px-5 pb-3 overflow-y-auto overscroll-contain scroll-smooth [-webkit-overflow-scrolling:touch]">
               {/* Capa + info + transporte — altura fixa, não rola */}
               <div className="w-full max-w-[340px] mx-auto flex flex-col gap-5 shrink-0">
                 <div className="w-full aspect-square">
@@ -468,7 +485,10 @@ export function ExpandedPlayer({ seek }: ExpandedPlayerProps) {
                     return (
                       <button
                         key={tab}
-                        onClick={() => setExpandedTab(mappedTab)}
+                        onClick={() => {
+                          setExpandedTab(mappedTab);
+                          mobileTabContentRef.current?.scrollTo({ top: 0 });
+                        }}
                         data-tour={mappedTab === 'LYRICS' ? 'lyrics-tab' : undefined}
                         className={`flex-1 rounded-full py-2 text-[11px] font-semibold transition-colors ${
                           isActive ? 'bg-white text-black' : 'text-white/70'
@@ -482,10 +502,15 @@ export function ExpandedPlayer({ seek }: ExpandedPlayerProps) {
               </div>
 
               {/* Conteúdo da aba ativa — rola dentro do espaço restante */}
-              <div className="w-full max-w-[340px] mx-auto flex-1 min-h-0 overflow-y-auto pt-3 [&::-webkit-scrollbar]:w-0">
+              <div
+                ref={mobileTabContentRef}
+                className="w-full max-w-[340px] mx-auto flex-1 min-h-0 overflow-y-auto overscroll-contain touch-pan-y scroll-smooth [-webkit-overflow-scrolling:touch] pt-3 [&::-webkit-scrollbar]:w-0"
+              >
                 {renderTabContent()}
               </div>
             </div>
+          )}
+            </>
           )}
 
           {menuOpen && menuAnchor && (
