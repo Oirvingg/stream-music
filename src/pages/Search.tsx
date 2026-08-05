@@ -4,6 +4,7 @@ import { usePlayerStore } from '../store/usePlayerStore';
 import { useSearchTracks } from '../hooks/useMusicQueries';
 import { goBackFromSearch } from '../utils/navigation';
 import { SearchResults } from './Home';
+import { SearchSuggestions } from '../components/SearchSuggestions';
 
 /**
  * Tela dedicada de Pesquisa (`/search`), usada no mobile pela lupa da Bottom
@@ -13,6 +14,7 @@ import { SearchResults } from './Home';
 export function Search() {
   const { searchQuery, setSearchQuery } = usePlayerStore();
   const [query, setQuery] = useState(searchQuery);
+  const [suggestionsOpen, setSuggestionsOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -22,7 +24,10 @@ export function Search() {
   const { data: searchResults = [], isLoading: isSearchingTracks } = useSearchTracks(searchQuery);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') setSearchQuery(query.trim());
+    if (e.key === 'Enter') {
+      setSearchQuery(query.trim());
+      setSuggestionsOpen(false);
+    }
   };
 
   return (
@@ -43,9 +48,21 @@ export function Search() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
+            onFocus={() => setSuggestionsOpen(true)}
             placeholder="Pesquise músicas, álbuns, artistas, podcasts"
             className="w-full h-11 pl-11 pr-4 bg-yt-search-bg border border-yt-border/50 rounded-full text-sm text-white placeholder:text-yt-text-tertiary focus:outline-none focus:border-white/30 transition-colors"
           />
+          {suggestionsOpen && (
+            <SearchSuggestions
+              query={query}
+              onClose={() => setSuggestionsOpen(false)}
+              onSelectTerm={(term) => {
+                setQuery(term);
+                setSearchQuery(term);
+                setSuggestionsOpen(false);
+              }}
+            />
+          )}
         </div>
       </div>
 

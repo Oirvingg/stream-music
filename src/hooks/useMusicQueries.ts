@@ -55,6 +55,37 @@ export function useSearchTracks(query: string) {
 }
 
 /**
+ * Sugestões instantâneas para o dropdown de autocomplete da busca (poucos
+ * itens, chave de cache própria para não colidir com `useSearchTracks`
+ * (limit 20) nem `useSearchArtistsList` (limit 24), que usam a mesma
+ * query mas quantidades diferentes.
+ */
+export function useSearchSuggestions(query: string) {
+  const trimmed = query.trim();
+  const enabled = trimmed.length > 1;
+
+  const tracksQuery = useQuery({
+    queryKey: ['searchSuggestions', 'tracks', trimmed],
+    queryFn: () => searchTracks(trimmed, 5),
+    enabled,
+    staleTime: 60 * 1000,
+  });
+
+  const artistsQuery = useQuery({
+    queryKey: ['searchSuggestions', 'artists', trimmed],
+    queryFn: () => searchArtists(trimmed, 3),
+    enabled,
+    staleTime: 60 * 1000,
+  });
+
+  return {
+    tracks: tracksQuery.data ?? [],
+    artists: artistsQuery.data ?? [],
+    isLoading: tracksQuery.isFetching || artistsQuery.isFetching,
+  };
+}
+
+/**
  * Busca o(s) candidato(s) a artista mais relevante(s) para uma pesquisa de
  * texto — a confirmação de qual (se algum) deve virar o Hero Card de artista
  * é feita por quem consome este hook, cruzando com os resultados de faixas

@@ -2,10 +2,12 @@ import { useEffect, useState } from 'react';
 import { Search, Cast, User, LogOut, LogIn } from 'lucide-react';
 import { usePlayerStore } from '../store/usePlayerStore';
 import { useAuthStore } from '../store/useAuthStore';
+import { SearchSuggestions } from './SearchSuggestions';
 
 export function Header() {
   const [query, setQuery] = useState('');
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [suggestionsOpen, setSuggestionsOpen] = useState(false);
   const { homeSearchQuery, setHomeSearchQuery } = usePlayerStore();
   const { user, isAuthenticated, setAuthModalOpen, logout } = useAuthStore();
 
@@ -18,6 +20,7 @@ export function Header() {
   const handleSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       setHomeSearchQuery(query.trim());
+      setSuggestionsOpen(false);
     }
   };
 
@@ -36,9 +39,21 @@ export function Header() {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={handleSearch}
+              onFocus={() => setSuggestionsOpen(true)}
               placeholder="Pesquise músicas, álbuns, artistas, podcasts"
               className="w-full h-10 pl-12 pr-4 bg-yt-search-bg border border-yt-border/50 rounded-lg text-sm text-white placeholder:text-yt-text-tertiary focus:outline-none focus:border-white/30 transition-colors"
             />
+            {suggestionsOpen && (
+              <SearchSuggestions
+                query={query}
+                onClose={() => setSuggestionsOpen(false)}
+                onSelectTerm={(term) => {
+                  setQuery(term);
+                  setHomeSearchQuery(term);
+                  setSuggestionsOpen(false);
+                }}
+              />
+            )}
           </div>
         </div>
 

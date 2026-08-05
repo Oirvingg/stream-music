@@ -46,11 +46,11 @@ const mapDeezerTrack = (track: any): Track => ({
 /**
  * Pesquisa músicas pelo texto (query).
  */
-export const searchTracks = async (query: string): Promise<Track[]> => {
+export const searchTracks = async (query: string, limit = 20): Promise<Track[]> => {
   if (!query) return [];
 
   try {
-    const data = await fetchDeezerJson(`${BASE_URL}/search?q=${encodeURIComponent(query)}&limit=20`);
+    const data = await fetchDeezerJson(`${BASE_URL}/search?q=${encodeURIComponent(query)}&limit=${limit}`);
 
     if (!data?.data) return [];
 
