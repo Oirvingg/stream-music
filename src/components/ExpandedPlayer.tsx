@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import {
   ChevronDown, Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, Repeat, Heart, Music2,
-  Cast, MoreVertical, Shuffle, PlaySquare, ListPlus, Bookmark, Download, Share2,
+  Cast, MoreVertical, Shuffle, PlaySquare, ListPlus, Bookmark, Download, Share2, ListX,
 } from 'lucide-react';
 import { usePlayerStore } from '../store/usePlayerStore';
 import { useLyrics } from '../hooks/useLyrics';
@@ -12,7 +12,7 @@ import { MobileLyricsView } from './MobileLyricsView';
 import { AudioVisualizer } from './AudioVisualizer';
 import { CardMenuDropdown, CardMenuItem } from './CardMenuDropdown';
 import { SaveToPlaylistModal } from './SaveToPlaylistModal';
-import { getArtistName, getArtistId } from '../types/music';
+import { getArtistName, getArtistId, type Track } from '../types/music';
 import { goToArtist } from '../utils/navigation';
 import { useIsMobile } from '../hooks/useIsMobile';
 import { useFavoriteTracks, useToggleFavoriteTrack } from '../hooks/useLibraryQueries';
@@ -89,7 +89,7 @@ export function ExpandedPlayer({ seek }: ExpandedPlayerProps) {
   const {
     isExpanded, toggleExpand, currentTrack, isPlaying, togglePlay,
     volume, setVolume, currentTime, duration, nextTrack, prevTrack,
-    queue, expandedTab, setExpandedTab, shuffleQueue, playNext, addToQueue,
+    queue, expandedTab, setExpandedTab, shuffleQueue, playNext, addToQueue, removeFromQueue,
   } = usePlayerStore();
 
   const isMobile = useIsMobile();
@@ -101,6 +101,18 @@ export function ExpandedPlayer({ seek }: ExpandedPlayerProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [menuAnchor, setMenuAnchor] = useState<DOMRect | null>(null);
   const [saveModalOpen, setSaveModalOpen] = useState(false);
+  // Faixa alvo do menu de opções/modal — pode ser a faixa em reprodução
+  // (botão "mais opções" do cabeçalho) ou um item específico da fila.
+  const [menuTrack, setMenuTrack] = useState<Track | null>(null);
+  const [menuTrackQueueIndex, setMenuTrackQueueIndex] = useState<number | null>(null);
+
+  const openTrackMenu = (track: Track, e: React.MouseEvent, queueIndex: number | null = null) => {
+    e.stopPropagation();
+    setMenuTrack(track);
+    setMenuTrackQueueIndex(queueIndex);
+    setMenuAnchor(e.currentTarget.getBoundingClientRect());
+    setMenuOpen(true);
+  };
 
   const { data: likedTracks = [] } = useFavoriteTracks();
   const toggleFavoriteTrack = useToggleFavoriteTrack();
@@ -167,13 +179,16 @@ export function ExpandedPlayer({ seek }: ExpandedPlayerProps) {
 
   const { data: relatedArtists = [], isLoading: isLoadingRelated } = useArtistRelated(artistId);
 
-  const menuItems: CardMenuItem[] = currentTrack ? [
+  const menuItems: CardMenuItem[] = menuTrack ? [
     { id: 'shuffle', icon: Shuffle, label: 'Aleatório', onClick: () => shuffleQueue() },
-    { id: 'play-next', icon: PlaySquare, label: 'Tocar a seguir', onClick: () => playNext(currentTrack) },
-    { id: 'add-queue', icon: ListPlus, label: 'Adicionar à fila', onClick: () => addToQueue(currentTrack) },
+    { id: 'play-next', icon: PlaySquare, label: 'Tocar a seguir', onClick: () => playNext(menuTrack) },
+    { id: 'add-queue', icon: ListPlus, label: 'Adicionar à fila', onClick: () => addToQueue(menuTrack) },
     { id: 'save-playlist', icon: Bookmark, label: 'Salvar na playlist', onClick: () => setSaveModalOpen(true) },
-    { id: 'download', icon: Download, label: 'Baixar', onClick: () => console.log('[Baixar]', currentTrack.title) },
-    { id: 'share', icon: Share2, label: 'Compartilhar', onClick: () => console.log('[Compartilhar]', currentTrack.title) },
+    { id: 'download', icon: Download, label: 'Baixar', onClick: () => console.log('[Baixar]', menuTrack.title) },
+    { id: 'share', icon: Share2, label: 'Compartilhar', onClick: () => console.log('[Compartilhar]', menuTrack.title) },
+    ...(menuTrackQueueIndex !== null ? [
+      { id: 'remove-queue', icon: ListX, label: 'Remover da fila', danger: true, onClick: () => removeFromQueue(menuTrackQueueIndex) },
+    ] : []),
   ] : [];
 
   /** Conteúdo das 3 abas (Fila/Letra/Relacionados) — compartilhado pelos
@@ -221,17 +236,26 @@ export function ExpandedPlayer({ seek }: ExpandedPlayerProps) {
                     )}
                   </p>
                 </div>
-                {isPlayingTrack ? (
-                  <div className="w-4 h-4 flex items-end justify-between gap-[2px]">
-                    <div className="w-1 bg-white animate-[bounce_1s_infinite] h-full" />
-                    <div className="w-1 bg-white animate-[bounce_1.2s_infinite] h-2/3" />
-                    <div className="w-1 bg-white animate-[bounce_0.8s_infinite] h-4/5" />
-                  </div>
-                ) : (
-                  <span className="text-xs text-white/50 tabular-nums">
-                    {formatTime(track.duration)}
-                  </span>
-                )}
+                <div className="flex items-center gap-2 shrink-0">
+                  {isPlayingTrack ? (
+                    <div className="w-4 h-4 flex items-end justify-between gap-[2px]">
+                      <div className="w-1 bg-white animate-[bounce_1s_infinite] h-full" />
+                      <div className="w-1 bg-white animate-[bounce_1.2s_infinite] h-2/3" />
+                      <div className="w-1 bg-white animate-[bounce_0.8s_infinite] h-4/5" />
+                    </div>
+                  ) : (
+                    <span className="text-xs text-white/50 tabular-nums">
+                      {formatTime(track.duration)}
+                    </span>
+                  )}
+                  <button
+                    type="button"
+                    onClick={(e) => openTrackMenu(track, e, idx)}
+                    className="p-1.5 text-white/60 hover:text-white hover:bg-white/10 rounded-full transition-colors shrink-0"
+                  >
+                    <MoreVertical className="w-4 h-4" />
+                  </button>
+                </div>
               </DraggableTrackRow>
             );
           })}
@@ -350,8 +374,7 @@ export function ExpandedPlayer({ seek }: ExpandedPlayerProps) {
               <button
                 onClick={(e) => {
                   if (!currentTrack) return;
-                  setMenuAnchor(e.currentTarget.getBoundingClientRect());
-                  setMenuOpen(true);
+                  openTrackMenu(currentTrack, e);
                 }}
                 disabled={!currentTrack}
                 className="p-2 text-white/70 hover:text-white transition-colors rounded-full hover:bg-white/10 disabled:opacity-40"
@@ -534,10 +557,7 @@ export function ExpandedPlayer({ seek }: ExpandedPlayerProps) {
                         <Heart className={`w-6 h-6 ${isLiked ? 'fill-red-500 text-red-500' : ''}`} />
                       </button>
                       <button
-                        onClick={(e) => {
-                          setMenuAnchor(e.currentTarget.getBoundingClientRect());
-                          setMenuOpen(true);
-                        }}
+                        onClick={(e) => openTrackMenu(currentTrack, e)}
                         className="p-3 text-white/60 hover:text-white hover:bg-white/10 rounded-full transition-colors"
                       >
                         <MoreVertical className="w-6 h-6" />
@@ -663,8 +683,8 @@ export function ExpandedPlayer({ seek }: ExpandedPlayerProps) {
       {menuOpen && menuAnchor && (
         <CardMenuDropdown anchorRect={menuAnchor} items={menuItems} onClose={() => setMenuOpen(false)} />
       )}
-      {currentTrack && (
-        <SaveToPlaylistModal isOpen={saveModalOpen} onClose={() => setSaveModalOpen(false)} track={currentTrack} />
+      {menuTrack && (
+        <SaveToPlaylistModal isOpen={saveModalOpen} onClose={() => setSaveModalOpen(false)} track={menuTrack} />
       )}
     </div>
   );

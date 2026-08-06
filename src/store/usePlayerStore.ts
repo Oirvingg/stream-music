@@ -36,6 +36,7 @@ interface PlayerState {
   activePage: 'HOME' | 'EXPLORE' | 'LIBRARY' | 'SEARCH';
   setActivePage: (page: 'HOME' | 'EXPLORE' | 'LIBRARY' | 'SEARCH') => void;
   reorderQueue: (startIndex: number, endIndex: number) => void;
+  removeFromQueue: (index: number) => void;
 
   activeArtistId: string | null;
   setActiveArtistId: (id: string | null) => void;
@@ -126,6 +127,12 @@ export const usePlayerStore = create<PlayerState>()(
         const newQueue = Array.from(state.queue);
         const [movedTrack] = newQueue.splice(startIndex, 1);
         newQueue.splice(endIndex, 0, movedTrack);
+        return { queue: newQueue };
+      }),
+
+      removeFromQueue: (index) => set((state) => {
+        const newQueue = [...state.queue];
+        newQueue.splice(index, 1);
         return { queue: newQueue };
       }),
 
