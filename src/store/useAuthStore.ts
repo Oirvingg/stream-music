@@ -1,5 +1,13 @@
 import { create } from 'zustand';
-import { AuthUserData, completeOnboarding as completeOnboardingRequest, logoutUser, restoreSession } from '../services/authService';
+import {
+  AuthUserData,
+  completeOnboarding as completeOnboardingRequest,
+  logoutUser,
+  restoreSession,
+  switchToAccount,
+  getAccounts,
+} from '../services/authService';
+import { SavedAccount, removeSavedAccount } from '../services/authToken';
 
 export type AuthMode = 'login' | 'register';
 
@@ -10,6 +18,7 @@ interface AuthState {
   authMode: AuthMode;
   isLoading: boolean;
   error: string | null;
+  savedAccounts: SavedAccount[];
 
   // Ações
   setUser: (user: AuthUserData | null) => void;
@@ -20,6 +29,9 @@ interface AuthState {
   logout: () => Promise<void>;
   initAuthListener: () => () => void;
   completeOnboarding: () => Promise<void>;
+  refreshSavedAccounts: () => void;
+  switchAccount: (uid: string) => Promise<void>;
+  removeAccount: (uid: string) => void;
 }
 
 export const useAuthStore = create<AuthState>((set, get) => ({
@@ -29,6 +41,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   authMode: 'login',
   isLoading: false,
   error: null,
+  savedAccounts: [],
 
   setUser: (user) =>
     set({
@@ -60,9 +73,26 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   initAuthListener: () => {
     restoreSession().then((user) => {
-      set({ user, isAuthenticated: !!user });
+      set({ user, isAuthenticated: !!user, savedAccounts: getAccounts() });
     });
     return () => {};
+  },
+
+  refreshSavedAccounts: () => set({ savedAccounts: getAccounts() }),
+
+  switchAccount: async (uid) => {
+    const user = await switchToAccount(uid);
+    set({ user, isAuthenticated: true, savedAccounts: getAccounts() });
+  },
+
+  removeAccount: (uid) => {
+    removeSavedAccount(uid);
+    const { user } = get();
+    set({ savedAccounts: getAccounts() });
+    // Se a conta removida é a ativa, também encerra a sessão atual.
+    if (user?.uid === uid) {
+      get().logout();
+    }
   },
 
   completeOnboarding: async () => {

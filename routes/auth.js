@@ -304,4 +304,60 @@ router.put('/onboarding', authenticate, async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /auth/avatar:
+ *   put:
+ *     summary: Atualizar a foto de perfil do usuário autenticado
+ *     tags: [Autenticação]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               photoURL:
+ *                 type: string
+ *                 description: URL da imagem ou data URI (base64) da nova foto de perfil
+ *     responses:
+ *       200:
+ *         description: Foto de perfil atualizada com sucesso
+ *       400:
+ *         description: photoURL ausente ou inválida
+ *       401:
+ *         description: Não autorizado (Token Ausente ou Inválido)
+ */
+router.put('/avatar', authenticate, async (req, res) => {
+  const { photoURL } = req.body;
+
+  if (!photoURL || typeof photoURL !== 'string' || !photoURL.startsWith('data:image/')) {
+    return res.status(400).json({ message: 'Envie uma imagem válida (data URI).' });
+  }
+
+  // ~4MB em base64 (dado que o front-end já reduz a imagem antes de enviar).
+  if (photoURL.length > 4_500_000) {
+    return res.status(400).json({ message: 'Imagem muito grande. Escolha uma foto menor.' });
+  }
+
+  try {
+    const { rows } = await pool.query(
+      'UPDATE users SET photo_url = $1 WHERE id = $2 RETURNING id, name, email, photo_url, is_first_login',
+      [photoURL, req.user.uid]
+    );
+    const user = rows[0];
+
+    if (!user) {
+      return res.status(404).json({ message: 'Usuário não encontrado.' });
+    }
+
+    res.json(toUserResponse(user));
+  } catch (error) {
+    console.error('Erro ao atualizar foto de perfil:', error);
+    res.status(500).json({ message: 'Erro ao atualizar a foto de perfil.' });
+  }
+});
+
 export default router;

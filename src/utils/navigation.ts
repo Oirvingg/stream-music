@@ -167,6 +167,20 @@ export function goToLibrary() {
 }
 
 /**
+ * Navega para o Histórico de reprodução (`/history`), fechando qualquer
+ * página de detalhe (artista/álbum/playlist) que esteja sobreposta. Acessada
+ * pelo menu de perfil (avatar) no cabeçalho.
+ */
+export function goToHistory() {
+  clearDetailRoutes();
+  const store = usePlayerStore.getState();
+  store.setActivePlaylistId(null);
+  store.setHomeSearchQuery('');
+  store.setActivePage('HISTORY');
+  window.history.pushState({}, '', '/history');
+}
+
+/**
  * Navega para a tela dedicada de Pesquisa (`/search`), usada pela lupa da
  * Bottom Nav e pela barra de busca do Header no mobile. Distinta de
  * "Explorar" (Gêneros e Momentos).

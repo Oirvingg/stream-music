@@ -9,6 +9,7 @@ import { Home } from './pages/Home';
 import { Explore } from './pages/Explore';
 import { Search } from './pages/Search';
 import { Library } from './pages/Library';
+import { History } from './pages/History';
 import { ArtistPage } from './pages/ArtistPage';
 import { AlbumPage } from './pages/AlbumPage';
 import { PlaylistPage } from './pages/PlaylistPage';
@@ -96,6 +97,8 @@ function App() {
               <Search />
             ) : !activePlaylistId && activePage === 'LIBRARY' ? (
               <Library />
+            ) : !activePlaylistId && activePage === 'HISTORY' ? (
+              <History />
             ) : (
               <Home />
             )}

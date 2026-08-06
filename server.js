@@ -28,7 +28,8 @@ app.use(
     origin: allowedOrigins.length > 0 ? allowedOrigins : true,
   })
 );
-app.use(express.json());
+// Limite elevado para acomodar o upload de foto de perfil como data URI (base64).
+app.use(express.json({ limit: '6mb' }));
 
 // Configurações do Swagger / OpenAPI 3.0
 const swaggerOptions = {

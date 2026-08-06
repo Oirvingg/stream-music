@@ -1,15 +1,16 @@
 import { useEffect, useState } from 'react';
-import { Search, Cast, User, LogOut, LogIn } from 'lucide-react';
+import { Search, Cast, LogIn } from 'lucide-react';
 import { usePlayerStore } from '../store/usePlayerStore';
 import { useAuthStore } from '../store/useAuthStore';
 import { SearchSuggestions } from './SearchSuggestions';
+import { ProfileMenu } from './ProfileMenu';
 
 export function Header() {
   const [query, setQuery] = useState('');
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [suggestionsOpen, setSuggestionsOpen] = useState(false);
   const { homeSearchQuery, setHomeSearchQuery } = usePlayerStore();
-  const { user, isAuthenticated, setAuthModalOpen, logout } = useAuthStore();
+  const { user, isAuthenticated, setAuthModalOpen } = useAuthStore();
 
   // Mantém a caixa de busca em sincronia quando a pesquisa é limpa
   // externamente (ex: ao clicar em "Início" na barra lateral).
@@ -103,25 +104,8 @@ export function Header() {
                 </span>
               </button>
 
-              {/* Dropdown Menu do Usuário */}
-              {showUserMenu && (
-                <div
-                  className="absolute right-0 mt-2 w-48 bg-[#1a1a1a] border border-white/10 rounded-xl shadow-2xl py-1.5 z-50 animate-fade-in"
-                  onClick={() => setShowUserMenu(false)}
-                >
-                  <div className="px-4 py-2 border-b border-white/5">
-                    <p className="text-xs font-semibold text-white truncate">{user.displayName}</p>
-                    <p className="text-[11px] text-yt-text-secondary truncate">{user.email}</p>
-                  </div>
-                  <button
-                    onClick={() => logout()}
-                    className="w-full text-left px-4 py-2 text-xs text-red-400 hover:bg-white/5 flex items-center gap-2 transition-colors"
-                  >
-                    <LogOut className="w-4 h-4" />
-                    <span>Sair da conta</span>
-                  </button>
-                </div>
-              )}
+              {/* Menu de Perfil do Usuário */}
+              {showUserMenu && <ProfileMenu onClose={() => setShowUserMenu(false)} />}
             </div>
           ) : (
             <button
