@@ -2,6 +2,14 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { Track } from '../types/music';
 
+/** Última página de detalhe (artista/álbum/playlist) aberta a partir da aba
+ * Buscar — permite restaurá-la ao voltar para essa aba pela Bottom Nav em
+ * vez de sempre reiniciar na tela de busca zerada. */
+export interface SearchDetailSnapshot {
+  type: 'artist' | 'album' | 'playlist';
+  id: string;
+}
+
 interface PlayerState {
   currentTrack: Track | null;
   isPlaying: boolean;
@@ -52,6 +60,9 @@ interface PlayerState {
 
   searchActiveFilter: string;
   setSearchActiveFilter: (filter: string) => void;
+
+  searchDetailSnapshot: SearchDetailSnapshot | null;
+  setSearchDetailSnapshot: (snapshot: SearchDetailSnapshot | null) => void;
 }
 
 export const usePlayerStore = create<PlayerState>()(
@@ -75,6 +86,7 @@ export const usePlayerStore = create<PlayerState>()(
       activeAlbumId: null,
       activePublicPlaylistId: null,
       searchActiveFilter: 'Tudo',
+      searchDetailSnapshot: null,
 
       setTrack: (track) =>
         set((state) => {
@@ -108,6 +120,7 @@ export const usePlayerStore = create<PlayerState>()(
       setActiveAlbumId: (id) => set({ activeAlbumId: id }),
       setActivePublicPlaylistId: (id) => set({ activePublicPlaylistId: id }),
       setSearchActiveFilter: (filter) => set({ searchActiveFilter: filter }),
+      setSearchDetailSnapshot: (snapshot) => set({ searchDetailSnapshot: snapshot }),
 
       toggleExpand: () => set((state) => ({ isExpanded: !state.isExpanded })),
       setExpandedTab: (tab) => set({ expandedTab: tab }),

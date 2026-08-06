@@ -12,6 +12,19 @@ function clearDetailRoutes() {
 }
 
 /**
+ * Se a navegação para uma página de detalhe (artista/álbum/playlist) parte
+ * da aba Buscar, guarda um retrato dela em `searchDetailSnapshot` — é o que
+ * permite restaurar essa mesma tela ao voltar para a aba Buscar pela Bottom
+ * Nav, em vez de sempre reiniciar na busca zerada.
+ */
+function snapshotSearchDetail(type: 'artist' | 'album' | 'playlist', id: string) {
+  const store = usePlayerStore.getState();
+  if (store.activePage === 'SEARCH') {
+    store.setSearchDetailSnapshot({ type, id });
+  }
+}
+
+/**
  * Navega para a página de um artista, sincronizando a URL via History API.
  * O app não usa uma lib de rotas (a navegação é toda orientada por estado no
  * Zustand); isso só reflete o id atual na barra de endereço para permitir
@@ -21,10 +34,18 @@ export function goToArtist(artistId: string) {
   clearDetailRoutes();
   usePlayerStore.getState().setActiveArtistId(artistId);
   window.history.pushState({}, '', `/artist/${artistId}`);
+  snapshotSearchDetail('artist', artistId);
 }
 
 export function goBackFromArtist() {
-  usePlayerStore.getState().setActiveArtistId(null);
+  const store = usePlayerStore.getState();
+  store.setActiveArtistId(null);
+  // Volta explicitamente feita dentro da aba Buscar: a tela de detalhe foi
+  // fechada de propósito, então não deve ser restaurada da próxima vez que
+  // o usuário reentrar nessa aba pela Bottom Nav.
+  if (store.activePage === 'SEARCH') {
+    store.setSearchDetailSnapshot(null);
+  }
   window.history.pushState({}, '', '/');
 }
 
@@ -43,10 +64,15 @@ export function goToAlbum(albumId: string) {
   clearDetailRoutes();
   usePlayerStore.getState().setActiveAlbumId(albumId);
   window.history.pushState({}, '', `/album/${albumId}`);
+  snapshotSearchDetail('album', albumId);
 }
 
 export function goBackFromAlbum() {
-  usePlayerStore.getState().setActiveAlbumId(null);
+  const store = usePlayerStore.getState();
+  store.setActiveAlbumId(null);
+  if (store.activePage === 'SEARCH') {
+    store.setSearchDetailSnapshot(null);
+  }
   window.history.pushState({}, '', '/');
 }
 
@@ -67,10 +93,15 @@ export function goToPlaylist(playlistId: string) {
   clearDetailRoutes();
   usePlayerStore.getState().setActivePublicPlaylistId(playlistId);
   window.history.pushState({}, '', `/playlist/${playlistId}`);
+  snapshotSearchDetail('playlist', playlistId);
 }
 
 export function goBackFromPlaylist() {
-  usePlayerStore.getState().setActivePublicPlaylistId(null);
+  const store = usePlayerStore.getState();
+  store.setActivePublicPlaylistId(null);
+  if (store.activePage === 'SEARCH') {
+    store.setSearchDetailSnapshot(null);
+  }
   window.history.pushState({}, '', '/');
 }
 
@@ -139,13 +170,50 @@ export function goToLibrary() {
  * Navega para a tela dedicada de Pesquisa (`/search`), usada pela lupa da
  * Bottom Nav e pela barra de busca do Header no mobile. Distinta de
  * "Explorar" (Gêneros e Momentos).
+ *
+ * Replica o comportamento de apps como Spotify/YT Music: tocar na aba
+ * Buscar vindo de outra aba retoma a tela exatamente como foi deixada
+ * (inclusive uma página de artista/álbum/playlist aberta a partir da
+ * busca, via `searchDetailSnapshot`); só reseta a busca (query, filtro e
+ * qualquer detalhe aberto) quando o usuário já está na aba Buscar e toca
+ * nela de novo — o 2º toque consecutivo.
  */
 export function goToSearch() {
-  clearDetailRoutes();
   const store = usePlayerStore.getState();
+  const alreadyOnSearchTab = store.activePage === 'SEARCH';
+
+  if (alreadyOnSearchTab) {
+    clearDetailRoutes();
+    store.setSearchDetailSnapshot(null);
+    store.setActivePlaylistId(null);
+    store.setSearchQuery('');
+    store.setSearchActiveFilter('Tudo');
+    store.setHomeSearchQuery('');
+    store.setActivePage('SEARCH');
+    window.history.pushState({}, '', '/search');
+    return;
+  }
+
+  clearDetailRoutes();
   store.setActivePlaylistId(null);
   store.setHomeSearchQuery('');
   store.setActivePage('SEARCH');
+
+  const snapshot = store.searchDetailSnapshot;
+  if (snapshot) {
+    if (snapshot.type === 'artist') {
+      store.setActiveArtistId(snapshot.id);
+      window.history.pushState({}, '', `/artist/${snapshot.id}`);
+    } else if (snapshot.type === 'album') {
+      store.setActiveAlbumId(snapshot.id);
+      window.history.pushState({}, '', `/album/${snapshot.id}`);
+    } else {
+      store.setActivePublicPlaylistId(snapshot.id);
+      window.history.pushState({}, '', `/playlist/${snapshot.id}`);
+    }
+    return;
+  }
+
   window.history.pushState({}, '', '/search');
 }
 
@@ -153,6 +221,7 @@ export function goBackFromSearch() {
   const store = usePlayerStore.getState();
   store.setSearchQuery('');
   store.setSearchActiveFilter('Tudo');
+  store.setSearchDetailSnapshot(null);
   store.setActivePage('HOME');
   window.history.pushState({}, '', '/');
 }
