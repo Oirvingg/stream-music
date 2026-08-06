@@ -2,9 +2,11 @@ import { useRef, useState } from 'react';
 import { ChevronRight, ArrowRight } from 'lucide-react';
 import { usePlayerStore } from '../store/usePlayerStore';
 import { useAuthStore } from '../store/useAuthStore';
-import { Track } from '../types/music';
+import { getArtistName, Track } from '../types/music';
+import { goToAlbum, goToPlaylist } from '../utils/navigation';
+import { JukeboxItem } from '../hooks/useJukeboxItems';
 
-const PAGE_SIZE = 9;
+const PAGE_SIZE = 12;
 
 function chunk<T>(items: T[], size: number): T[][] {
   const pages: T[][] = [];
@@ -15,21 +17,24 @@ function chunk<T>(items: T[], size: number): T[][] {
 }
 
 interface JukeboxGridProps {
-  tracks: Track[];
+  items: JukeboxItem[];
   isLoading: boolean;
 }
 
 /**
- * "Jukebox digital" — grid 3x3 paginado, estilo "Quick Picks" do YouTube
+ * "Jukebox digital" — grid 3x4 paginado, estilo "Quick Picks" do YouTube
  * Music, exibido só no mobile na Home (o desktop mantém as seções
- * horizontais tradicionais).
+ * horizontais tradicionais). Mistura faixas, álbuns e playlists — cada tipo
+ * tem seu próprio destino de clique (tocar vs. navegar para a tela de
+ * detalhes correspondente).
  */
-export function JukeboxGrid({ tracks, isLoading }: JukeboxGridProps) {
+export function JukeboxGrid({ items, isLoading }: JukeboxGridProps) {
   const { user } = useAuthStore();
   const [activePage, setActivePage] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  const pages = chunk(tracks, PAGE_SIZE);
+  const pages = chunk(items, PAGE_SIZE);
+  const trackList = items.filter((item): item is Extract<JukeboxItem, { type: 'track' }> => item.type === 'track').map((item) => item.track);
 
   const handleScroll = () => {
     const el = scrollRef.current;
@@ -39,7 +44,7 @@ export function JukeboxGrid({ tracks, isLoading }: JukeboxGridProps) {
 
   if (isLoading) {
     return (
-      <section className="md:hidden mb-8 animate-pulse">
+      <section className="md:hidden mb-6 animate-pulse">
         <div className="flex items-center gap-3 mb-4">
           <div className="w-10 h-10 rounded-full bg-zinc-800" />
           <div>
@@ -47,7 +52,7 @@ export function JukeboxGrid({ tracks, isLoading }: JukeboxGridProps) {
             <div className="h-4 w-32 bg-zinc-800 rounded" />
           </div>
         </div>
-        <div className="grid grid-cols-3 grid-rows-3 gap-2">
+        <div className="grid grid-cols-3 grid-rows-4 gap-3">
           {Array.from({ length: PAGE_SIZE }).map((_, i) => (
             <div key={i} className="aspect-square rounded-lg bg-zinc-800" />
           ))}
@@ -59,7 +64,7 @@ export function JukeboxGrid({ tracks, isLoading }: JukeboxGridProps) {
   if (pages.length === 0) return null;
 
   return (
-    <section className="md:hidden mb-8" data-tour="jukebox-grid">
+    <section className="md:hidden mb-6" data-tour="jukebox-grid">
       {/* Header da seção */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3 min-w-0">
@@ -82,19 +87,19 @@ export function JukeboxGrid({ tracks, isLoading }: JukeboxGridProps) {
         <ChevronRight className="w-5 h-5 text-white/60 shrink-0" />
       </div>
 
-      {/* Grid 3x3 paginado com scroll-snap lateral */}
+      {/* Grid 3x4 paginado com scroll-snap lateral */}
       <div
         ref={scrollRef}
         onScroll={handleScroll}
         className="flex overflow-x-auto snap-x snap-mandatory no-scrollbar scroll-smooth"
       >
-        {pages.map((pageTracks, pageIdx) => (
+        {pages.map((pageItems, pageIdx) => (
           <div
             key={pageIdx}
-            className="grid grid-cols-3 grid-rows-3 gap-2 shrink-0 w-full snap-start snap-always"
+            className="grid grid-cols-3 grid-rows-4 gap-3 shrink-0 w-full snap-start snap-always"
           >
-            {pageTracks.map((track) => (
-              <JukeboxCard key={track.id} track={track} trackList={tracks} />
+            {pageItems.map((item) => (
+              <JukeboxTile key={item.key} item={item} trackList={trackList} />
             ))}
           </div>
         ))}
@@ -117,8 +122,32 @@ export function JukeboxGrid({ tracks, isLoading }: JukeboxGridProps) {
   );
 }
 
-function JukeboxCard({ track, trackList }: { track: Track; trackList: Track[] }) {
+function JukeboxTile({ item, trackList }: { item: JukeboxItem; trackList: Track[] }) {
   const { currentTrack, isPlaying, togglePlay, setQueue, setTrack } = usePlayerStore();
+
+  if (item.type === 'album') {
+    return (
+      <JukeboxTileButton
+        coverUrl={item.coverUrl}
+        title={item.title}
+        subtitle={`Álbum • ${item.artistName}`}
+        onClick={() => goToAlbum(item.id)}
+      />
+    );
+  }
+
+  if (item.type === 'playlist') {
+    return (
+      <JukeboxTileButton
+        coverUrl={item.coverUrl}
+        title={item.title}
+        subtitle="Playlist"
+        onClick={() => goToPlaylist(item.id)}
+      />
+    );
+  }
+
+  const { track } = item;
   const isActive = currentTrack?.id === track.id;
 
   const handleClick = () => {
@@ -131,20 +160,47 @@ function JukeboxCard({ track, trackList }: { track: Track; trackList: Track[] })
   };
 
   return (
+    <JukeboxTileButton
+      coverUrl={track.coverUrl}
+      title={track.title}
+      subtitle={getArtistName(track.artist)}
+      onClick={handleClick}
+      highlighted={isActive && isPlaying}
+    />
+  );
+}
+
+function JukeboxTileButton({
+  coverUrl,
+  title,
+  subtitle,
+  onClick,
+  highlighted = false,
+}: {
+  coverUrl: string;
+  title: string;
+  subtitle: string;
+  onClick: () => void;
+  highlighted?: boolean;
+}) {
+  return (
     <button
       type="button"
-      onClick={handleClick}
+      onClick={onClick}
       className="relative aspect-square w-full rounded-lg overflow-hidden text-left active:scale-[0.97] transition-transform"
     >
-      <img src={track.coverUrl} alt={track.title} className="absolute inset-0 w-full h-full object-cover" />
-      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/10 to-transparent" />
-      <p
-        className={`absolute bottom-1.5 left-1.5 right-6 text-[11px] font-medium leading-tight line-clamp-2 ${
-          isActive && isPlaying ? 'text-red-400' : 'text-white'
-        }`}
-      >
-        {track.title}
-      </p>
+      <img src={coverUrl} alt={title} className="absolute inset-0 w-full h-full object-cover" />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
+      <div className="absolute bottom-1.5 left-1.5 right-6">
+        <p
+          className={`text-[11px] font-medium leading-tight line-clamp-2 ${
+            highlighted ? 'text-red-400' : 'text-white'
+          }`}
+        >
+          {title}
+        </p>
+        <p className="text-[9px] text-white/60 leading-tight truncate mt-0.5">{subtitle}</p>
+      </div>
       <div className="absolute bottom-1 right-1 w-5 h-5 rounded-full bg-black/60 flex items-center justify-center">
         <ArrowRight className="w-3 h-3 text-white" />
       </div>

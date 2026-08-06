@@ -12,6 +12,7 @@ import {
 import { TrackContextMenu } from '../components/TrackContextMenu';
 import { TrackCard } from '../components/cards/TrackCard';
 import { JukeboxGrid } from '../components/JukeboxGrid';
+import { useJukeboxItems } from '../hooks/useJukeboxItems';
 import { PlaylistModal } from '../components/PlaylistModal';
 import { AddTrackToPlaylistModal } from '../components/AddTrackToPlaylistModal';
 import { DraggableTrackRow } from '../components/DraggableTrackRow';
@@ -732,6 +733,9 @@ export function Home() {
   const lastfmUsername = localStorage.getItem('lastfmUsername');
   const { data: personalizedData, isLoading: isLoadingPersonalized } = usePersonalizedTrendingTracks(history, lastfmUsername);
 
+  const jukeboxTracks = personalizedData && personalizedData.tracks.length > 0 ? personalizedData.tracks : trendingTracks;
+  const { items: jukeboxItems } = useJukeboxItems(jukeboxTracks, personalizedData?.sourceArtist ?? null);
+
   const { data: playlists = [] } = useUserPlaylists();
   const { data: likedTracks = [] } = useFavoriteTracks();
   const renamePlaylist = useRenamePlaylist();
@@ -968,9 +972,10 @@ export function Home() {
           <CategoryResults category={selectedCategory} />
         ) : (
           <>
-            {/* Mobile: Jukebox digital (grid 3x3 estilo "Quick Picks") */}
+            {/* Mobile: Jukebox digital (grid 3x4 estilo "Quick Picks", com
+                músicas, álbuns e playlists misturados) */}
             <JukeboxGrid
-              tracks={personalizedData && personalizedData.tracks.length > 0 ? personalizedData.tracks : trendingTracks}
+              items={jukeboxItems}
               isLoading={isLoadingTrending || isLoadingPersonalized}
             />
 
