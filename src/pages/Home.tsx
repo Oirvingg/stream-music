@@ -987,7 +987,7 @@ export function Home() {
 
             {/* Só no desktop — no mobile o Jukebox digital já cobre a mesma
                 função de "retomar o que eu tocava", então "Ouvir de novo"
-                fica redundante ali (ver histórico da conversa). */}
+                fica redundante ali. */}
             {listenAgainTracks.length > 0 && (
               <div className="hidden md:block">
                 <MusicSection title="Ouvir de novo" tracks={listenAgainTracks} />
