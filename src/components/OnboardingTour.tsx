@@ -3,6 +3,7 @@ import { Joyride, EVENTS, STATUS, type EventData, type Step } from 'react-joyrid
 import { useAuthStore } from '../store/useAuthStore';
 import { usePlayerStore } from '../store/usePlayerStore';
 import { useTrendingTracks } from '../hooks/useMusicQueries';
+import { useIsMobile } from '../hooks/useIsMobile';
 import { getArtistId } from '../types/music';
 import { goToArtist, goBackFromArtist } from '../utils/navigation';
 
@@ -65,14 +66,24 @@ function withTargetGuard(step: Step): Step {
 
 function buildSteps(
   trendingArtistIdRef: { current: string | null },
-  navigatedToArtistRef: { current: boolean }
+  navigatedToArtistRef: { current: boolean },
+  isMobile: boolean
 ): Step[] {
+  // A busca e a Biblioteca vivem em elementos diferentes conforme o
+  // breakpoint: no desktop são a barra de pesquisa do Header e o link da
+  // Sidebar; no mobile (onde Header/Sidebar ficam `hidden`) são os botões
+  // "Buscar"/"Biblioteca" da BottomNav. Como os dois pares de elementos
+  // coexistem no DOM (só um visível via CSS por vez), apontar sempre para
+  // o mesmo seletor faria o Joyride encontrar o nó oculto do breakpoint
+  // errado — por isso o alvo é escolhido de acordo com `isMobile`.
   const steps: Step[] = [
     {
-      target: '[data-tour="search-bar"]',
+      target: isMobile ? '[data-tour="search-bar-mobile"]' : '[data-tour="search-bar"]',
       title: 'Encontre sua vibe',
-      content: 'Pesquise por artistas, músicas ou álbuns usando o poder das APIs Deezer e Last.fm.',
-      placement: 'bottom',
+      content: isMobile
+        ? 'Toque em "Buscar" na barra inferior para achar artistas, músicas ou álbuns.'
+        : 'Pesquise por artistas, músicas ou álbuns usando o poder das APIs Deezer e Last.fm.',
+      placement: isMobile ? 'top' : 'bottom',
       skipBeacon: true,
     },
     {
@@ -84,10 +95,10 @@ function buildSteps(
       skipBeacon: true,
     },
     {
-      target: '[data-tour="sidebar-library"]',
+      target: isMobile ? '[data-tour="sidebar-library-mobile"]' : '[data-tour="sidebar-library"]',
       title: 'Sua Coleção',
       content: 'Aqui você acessa suas músicas curtidas, artistas favoritos e as playlists que você criar.',
-      placement: 'right',
+      placement: isMobile ? 'top' : 'right',
       skipBeacon: true,
     },
     {
@@ -100,12 +111,20 @@ function buildSteps(
     {
       target: LYRICS_TARGET,
       title: 'Cante Junto',
-      content: 'Experimente nossa tela de letras com transições suaves de CSS para uma experiência imersiva.',
+      content: 'Experimente nossa aba de letras com transições suaves de CSS para uma experiência imersiva.',
       placement: 'top',
       targetWaitTimeout: 3000,
       skipBeacon: true,
       before: async () => {
-        usePlayerStore.setState({ expandedTab: 'LYRICS', isExpanded: true });
+        // No mobile, a aba "Letra" ativa (expandedTab === 'LYRICS') troca a
+        // tela inteira pela MobileLyricsView, que não tem o botão da aba —
+        // por isso o passo destaca o botão em si (visível em QUEUE/RELATED)
+        // em vez de já trocar de aba, o que faria o próprio alvo sumir do
+        // DOM antes do Joyride conseguir posicioná-lo.
+        usePlayerStore.setState((state) => ({
+          isExpanded: true,
+          expandedTab: state.expandedTab === 'LYRICS' ? 'QUEUE' : state.expandedTab,
+        }));
         await wait(600); // aguarda a transição de slide-up (500ms) assentar
         await waitForElement(LYRICS_TARGET, 3000);
       },
@@ -143,6 +162,7 @@ function buildSteps(
  */
 export function OnboardingTour() {
   const { user, isAuthenticated, completeOnboarding } = useAuthStore();
+  const isMobile = useIsMobile();
 
   // Pequena tolerância após o mount: evita que o Joyride tente calcular a
   // posição do 1º passo antes do layout (Header/PlayerBar) estar assentado.
@@ -182,7 +202,10 @@ export function OnboardingTour() {
   }, [trendingTracks]);
 
   const navigatedToArtistRef = useRef(false);
-  const steps = useMemo(() => buildSteps(trendingArtistIdRef, navigatedToArtistRef), []);
+  const steps = useMemo(
+    () => buildSteps(trendingArtistIdRef, navigatedToArtistRef, isMobile),
+    [isMobile]
+  );
 
   const handleEvent = useCallback(
     (data: EventData) => {

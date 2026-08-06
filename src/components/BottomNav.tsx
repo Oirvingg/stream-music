@@ -54,6 +54,7 @@ export function BottomNav() {
       <button
         onClick={handleSearch}
         aria-label="Buscar"
+        data-tour="search-bar-mobile"
         className={`flex-1 flex flex-col items-center justify-center min-h-[44px] min-w-[44px] py-1 rounded-xl transition-all duration-200 active:scale-95 ${
           isSearchActive ? 'text-white font-semibold' : 'text-yt-text-secondary hover:text-white'
         }`}
@@ -66,6 +67,7 @@ export function BottomNav() {
       <button
         onClick={handleLibrary}
         aria-label="Biblioteca"
+        data-tour="sidebar-library-mobile"
         className={`flex-1 flex flex-col items-center justify-center min-h-[44px] min-w-[44px] py-1 rounded-xl transition-all duration-200 active:scale-95 ${
           isLibraryActive ? 'text-white font-semibold' : 'text-yt-text-secondary hover:text-white'
         }`}
