@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 interface SplashScreenProps {
   onFinish: () => void;
@@ -11,19 +11,32 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
   const [visible, setVisible] = useState(false);
   const [exiting, setExiting] = useState(false);
 
+  // Guarda a versão mais recente de onFinish sem entrar nas dependências do
+  // efeito abaixo — onFinish é recriado a cada render do App (ex.: quando
+  // respostas de auth/playlists chegam em produção), e se fosse dependência
+  // o efeito reiniciaria os timers a cada re-render, quebrando a animação.
+  const onFinishRef = useRef(onFinish);
+  onFinishRef.current = onFinish;
+
   useEffect(() => {
-    // Aguarda um frame antes de animar a entrada, para o navegador
-    // registrar o estado inicial (opacity-0/scale-95) antes da transição.
-    const enterFrame = requestAnimationFrame(() => setVisible(true));
+    // rAF duplo: o primeiro apenas garante que o navegador já pintou o
+    // estado inicial (opacity-0/scale-95); só no segundo aplicamos o estado
+    // final. Com um único rAF, builds de produção (bundle minificado, muito
+    // mais rápido para montar que o dev server) podem executar o callback
+    // antes do primeiro paint, fazendo o elemento "pular" direto pro estado
+    // final sem transição visível.
+    let enterFrame = requestAnimationFrame(() => {
+      enterFrame = requestAnimationFrame(() => setVisible(true));
+    });
     const exitTimer = setTimeout(() => setExiting(true), MIN_DISPLAY_MS);
-    const finishTimer = setTimeout(onFinish, MIN_DISPLAY_MS + EXIT_DURATION_MS);
+    const finishTimer = setTimeout(() => onFinishRef.current(), MIN_DISPLAY_MS + EXIT_DURATION_MS);
 
     return () => {
       cancelAnimationFrame(enterFrame);
       clearTimeout(exitTimer);
       clearTimeout(finishTimer);
     };
-  }, [onFinish]);
+  }, []);
 
   return (
     <div
