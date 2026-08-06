@@ -4,7 +4,7 @@ import { useAuthStore } from '../store/useAuthStore';
 import { usePlayerStore } from '../store/usePlayerStore';
 import { useTrendingTracks } from '../hooks/useMusicQueries';
 import { useIsMobile } from '../hooks/useIsMobile';
-import { getArtistId } from '../types/music';
+import { getArtistId, type Track } from '../types/music';
 import { goToArtist, goBackFromArtist } from '../utils/navigation';
 
 /**
@@ -67,8 +67,15 @@ function withTargetGuard(step: Step): Step {
 function buildSteps(
   trendingArtistIdRef: { current: string | null },
   navigatedToArtistRef: { current: boolean },
+  placeholderTrackRef: { current: Track | null },
   isMobile: boolean
 ): Step[] {
+  // Registra se o passo "Cante Junto" precisou inventar uma `currentTrack`
+  // de vitrine (usuário ainda não tinha tocado nada) — usado no `after`
+  // desse mesmo passo para limpar o estado caso a faixa não tenha sido
+  // efetivamente reproduzida.
+  const usedPlaceholderRef = { current: false };
+
   // A busca e a Biblioteca vivem em elementos diferentes conforme o
   // breakpoint: no desktop são a barra de pesquisa do Header e o link da
   // Sidebar; no mobile (onde Header/Sidebar ficam `hidden`) são os botões
@@ -116,6 +123,20 @@ function buildSteps(
       targetWaitTimeout: 3000,
       skipBeacon: true,
       before: async () => {
+        // No mobile, o corpo inteiro do player expansivo (cabeçalho, capa e
+        // a barra de abas onde vive o `lyrics-tab`) só é montado quando há
+        // uma `currentTrack` — usuários novos costumam chegar no onboarding
+        // sem nunca terem tocado nada, e nesse caso o alvo simplesmente
+        // nunca existiria no DOM. Usamos a 1ª faixa em alta (já em cache do
+        // passo do artista) como uma faixa "de vitrine": fica selecionada
+        // mas nunca é reproduzida (isPlaying continua false), só serve para
+        // satisfazer a condição de render. `usedPlaceholderRef` registra se
+        // fomos nós que a definimos, para poder desfazer isso no `after`.
+        if (!usePlayerStore.getState().currentTrack && placeholderTrackRef.current) {
+          usePlayerStore.setState({ currentTrack: placeholderTrackRef.current });
+          usedPlaceholderRef.current = true;
+        }
+
         // No mobile, a aba "Letra" ativa (expandedTab === 'LYRICS') troca a
         // tela inteira pela MobileLyricsView, que não tem o botão da aba —
         // por isso o passo destaca o botão em si (visível em QUEUE/RELATED)
@@ -126,9 +147,20 @@ function buildSteps(
           expandedTab: state.expandedTab === 'LYRICS' ? 'QUEUE' : state.expandedTab,
         }));
         await wait(600); // aguarda a transição de slide-up (500ms) assentar
+
+        // Fallback seguro: se por algum motivo (ex: falha ao carregar
+        // tendências) o alvo ainda assim não existir, o polling apenas
+        // expira sem rejeitar — o Joyride trata como TARGET_NOT_FOUND e
+        // avança o tour graciosamente, sem travar nem lançar erro.
         await waitForElement(LYRICS_TARGET, 3000);
       },
       after: () => {
+        // Se a faixa "de vitrine" nunca chegou a tocar, desfaz a seleção
+        // para não deixar um "fantasma" na PlayerBar depois do tour.
+        if (usedPlaceholderRef.current && !usePlayerStore.getState().isPlaying) {
+          usePlayerStore.setState({ currentTrack: null });
+        }
+        usedPlaceholderRef.current = false;
         usePlayerStore.setState({ isExpanded: false });
       },
     },
@@ -192,18 +224,21 @@ export function OnboardingTour() {
     }
   }, [appReady, isAuthenticated, user, run]);
 
-  // Artista usado no passo 6 — reaproveita o cache já buscado pela Home
-  // (mesma queryKey), sem disparar uma nova requisição à API.
+  // Artista usado no passo 6 e faixa "de vitrine" usada no passo 5 (Letra)
+  // quando o usuário ainda não tocou nada — ambos reaproveitam o cache já
+  // buscado pela Home (mesma queryKey), sem disparar uma nova requisição.
   const { data: trendingTracks } = useTrendingTracks();
   const trendingArtistIdRef = useRef<string | null>(null);
+  const placeholderTrackRef = useRef<Track | null>(null);
   useEffect(() => {
     const withArtist = trendingTracks?.find((t) => getArtistId(t.artist));
     trendingArtistIdRef.current = withArtist ? getArtistId(withArtist.artist) : null;
+    placeholderTrackRef.current = trendingTracks?.[0] ?? null;
   }, [trendingTracks]);
 
   const navigatedToArtistRef = useRef(false);
   const steps = useMemo(
-    () => buildSteps(trendingArtistIdRef, navigatedToArtistRef, isMobile),
+    () => buildSteps(trendingArtistIdRef, navigatedToArtistRef, placeholderTrackRef, isMobile),
     [isMobile]
   );
 
