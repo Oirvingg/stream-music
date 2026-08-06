@@ -68,6 +68,36 @@ export function parseSyncedLyrics(syncedLyrics: string): LyricLine[] {
 }
 
 /**
+ * Prévias do Deezer (~30s) costumam começar no meio da faixa (refrão/hook),
+ * mas os timestamps do LRCLIB são relativos à música inteira — a primeira
+ * linha sincronizada quase sempre cai bem depois de 00:00 (intro instrumental
+ * do trecho reproduzido). Por isso sempre deslocamos as linhas para que a
+ * primeira apareça em 00:00: assim a letra já começa a se mover assim que a
+ * prévia dá play, em vez de ficar parada na 1ª linha por vários segundos.
+ * Linhas que ainda assim ficarem além da janela (versos seguintes, fora do
+ * trecho de 30s) são descartadas, já que nunca seriam alcançadas na prévia.
+ */
+export function normalizeSyncedLyricsForPreview(
+  lines: LyricLine[],
+  previewWindowSeconds = 30,
+): LyricLine[] {
+  if (lines.length === 0) return lines;
+
+  const offset = lines[0].time;
+  const shifted = offset > 0
+    ? lines.map(line => ({ ...line, time: Math.max(0, line.time - offset) }))
+    : lines;
+
+  const withinWindow = shifted.filter(line => line.time <= previewWindowSeconds);
+  if (withinWindow.length > 0) return withinWindow;
+
+  // Nenhuma linha coube na janela (raro) — mantemos as linhas como fallback,
+  // mas travamos o tempo no limite da prévia para que um clique nelas nunca
+  // tente dar seek além da duração real do áudio carregado.
+  return shifted.map(line => ({ ...line, time: Math.min(line.time, previewWindowSeconds) }));
+}
+
+/**
  * Busca a letra de uma faixa com fallback resiliente entre múltiplas APIs
  * (LRCLIB e lyrics.ovh, orquestrado no backend via /api/lyrics). O título é
  * sanitizado antes do envio para remover ruídos como "(Remastered)" ou

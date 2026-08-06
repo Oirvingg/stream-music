@@ -3,11 +3,7 @@ import { X, Play, Pause, SkipBack, SkipForward, Music2 } from 'lucide-react';
 import { getCoverGradient } from '../utils/coverColor';
 import { useAutoScrollActiveLine } from '../hooks/useAutoScrollActiveLine';
 import type { Track } from '../types/music';
-
-interface LyricLine {
-  time: number;
-  text: string;
-}
+import type { LyricLine } from '../services/lyricsService';
 
 interface MobileLyricsViewProps {
   track: Track;

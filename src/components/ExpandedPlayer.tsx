@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { usePlayerStore } from '../store/usePlayerStore';
 import { useLyrics } from '../hooks/useLyrics';
+import { normalizeSyncedLyricsForPreview, type LyricLine } from '../services/lyricsService';
 import { useAutoScrollActiveLine } from '../hooks/useAutoScrollActiveLine';
 import { DraggableTrackRow } from './DraggableTrackRow';
 import { MobileLyricsView } from './MobileLyricsView';
@@ -17,17 +18,20 @@ import { useIsMobile } from '../hooks/useIsMobile';
 import { useFavoriteTracks, useToggleFavoriteTrack } from '../hooks/useLibraryQueries';
 import { useArtistRelated } from '../hooks/useMusicQueries';
 
-interface LyricLine {
-  time: number;
-  text: string;
-}
-
 /**
  * Peso mínimo (em "chars" equivalentes) de qualquer linha, mesmo as curtas.
  * Valor alto o suficiente para que nenhuma linha fique ativa por menos de
  * ~1s em uma prévia de 30s — evita que o destaque troque rápido demais.
  */
 const MIN_LINE_WEIGHT = 16;
+
+/**
+ * Quantos segundos o destaque da letra é adiantado em relação ao `currentTime`
+ * real do áudio. Só afeta qual linha é marcada como ativa (e o scroll que a
+ * segue) — os timestamps das linhas em si não são alterados, então o seek ao
+ * clicar continua levando o áudio para o segundo exato daquela linha.
+ */
+const LYRICS_LEAD_SECONDS = 3;
 
 /**
  * Distribui os tempos proporcionalmente ao peso de cada linha.
@@ -111,19 +115,28 @@ export function ExpandedPlayer({ seek }: ExpandedPlayerProps) {
       return STATIC_LYRICS_MAP[titleKey];
     }
 
-    if (syncedLines && syncedLines.length > 0) return syncedLines;
+    if (syncedLines && syncedLines.length > 0) {
+      const previewWindow = duration > 5 && duration < 60 ? duration : 30;
+      return normalizeSyncedLyricsForPreview(syncedLines, previewWindow);
+    }
 
     if (!plainLyrics) return [];
     const dur = duration > 5 ? duration : 30;
     return buildTimedLyrics(plainLyrics, dur);
   }, [syncedLines, plainLyrics, duration, currentTrack]);
 
-  // Índice da linha ativa com base no currentTime
+  // Índice da linha ativa com base no currentTime, adiantado em
+  // LYRICS_LEAD_SECONDS para compensar a percepção de atraso entre o áudio e
+  // a troca de verso. Apenas o destaque/scroll usa esse tempo adiantado — o
+  // seek ao clicar numa linha continua usando `line.time` real (não somamos
+  // o lead aos timestamps, só ao lado da comparação), então o áudio sempre
+  // pula para o segundo correto.
   const activeIndex = useMemo(() => {
     if (!timedLyrics.length) return -1;
+    const effectiveTime = currentTime + LYRICS_LEAD_SECONDS;
     let idx = 0;
     for (let i = 0; i < timedLyrics.length; i++) {
-      if (currentTime >= timedLyrics[i].time) idx = i;
+      if (effectiveTime >= timedLyrics[i].time) idx = i;
     }
     return idx;
   }, [currentTime, timedLyrics]);

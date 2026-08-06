@@ -137,10 +137,17 @@ export function useAudioPlayer() {
   }, [volume]);
 
   const seek = (time: number) => {
-    if (audioRef.current) {
-      audioRef.current.currentTime = time;
-      usePlayerStore.getState().setCurrentTime(time);
-    }
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    // Trava o alvo entre 0 e a duração real do áudio carregado — a letra
+    // pode sugerir um tempo fora desse intervalo (ex: prévia mais curta que
+    // os 30s assumidos), e um seek além do fim é ignorado ou trava o áudio.
+    const maxTime = Number.isFinite(audio.duration) && audio.duration > 0 ? audio.duration : time;
+    const clampedTime = Math.min(Math.max(time, 0), maxTime);
+
+    audio.currentTime = clampedTime;
+    usePlayerStore.getState().setCurrentTime(clampedTime);
   };
 
   return { seek };

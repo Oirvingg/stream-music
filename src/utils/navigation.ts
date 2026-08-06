@@ -83,6 +83,19 @@ export function getPlaylistIdFromPath(pathname: string): string | null {
 }
 
 /**
+ * Navega para uma playlist do usuário (Biblioteca), fechando qualquer página
+ * de detalhe (artista/álbum/playlist pública) que esteja sobreposta. Distinta
+ * de `goToPlaylist` (playlists públicas do Deezer, com rota própria) — a
+ * playlist do usuário é renderizada dentro da Home a partir de
+ * `activePlaylistId`, sem rota dedicada.
+ */
+export function goToUserPlaylist(playlistId: string) {
+  clearDetailRoutes();
+  usePlayerStore.getState().setActivePlaylistId(playlistId);
+  window.history.pushState({}, '', '/');
+}
+
+/**
  * Navega para a Home (`/`), fechando qualquer página de detalhe
  * (artista/álbum/playlist) que esteja sobreposta — usada pelo "Início" da
  * Sidebar e da Bottom Nav, que precisam funcionar a partir de qualquer tela.
