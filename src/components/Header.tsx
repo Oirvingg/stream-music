@@ -58,7 +58,12 @@ export function Header() {
         </div>
 
         {/* Right — Actions & User Profile */}
-        <div className="flex items-center justify-end gap-2 md:gap-3 md:w-48 relative shrink-0">
+        {/* ml-auto: no mobile, os irmãos (spacer/busca) somem via `hidden`,
+            então este é o único filho do header — sem ele, `justify-between`
+            não tem o que "espalhar" e o bloco cola na esquerda, empurrando
+            o dropdown do usuário (que se abre para a esquerda a partir daqui)
+            para fora da tela. */}
+        <div className="flex items-center justify-end gap-2 md:gap-3 md:w-48 relative shrink-0 ml-auto">
           <button
             className="text-yt-text-secondary hover:text-white transition-colors p-1.5 rounded-full hover:bg-yt-surface"
             title="Transmitir"
