@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { usePlayerStore } from '../store/usePlayerStore';
+import { fetchFreshPreviewUrl } from '../services/deezerService';
 
 export let globalAnalyser: AnalyserNode | null = null;
 
@@ -33,6 +34,9 @@ export function useAudioPlayer() {
   const currentTrack = usePlayerStore((state) => state.currentTrack);
   const isPlaying = usePlayerStore((state) => state.isPlaying);
   const volume = usePlayerStore((state) => state.volume);
+  /** Evita retry infinito: só tentamos renovar o link de prévia expirado
+   * uma vez por faixa selecionada. */
+  const retriedTrackIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!audioRef.current) {
@@ -79,10 +83,41 @@ export function useAudioPlayer() {
       usePlayerStore.getState().nextTrack();
     };
     /** Falha de carregamento real (404, CORS, URL de prévia expirada, etc.) —
-     * evita deixar a UI "travada" em estado de play sem áudio nenhum. */
+     * evita deixar a UI "travada" em estado de play sem áudio nenhum.
+     *
+     * Links de prévia do Deezer expiram (token `hdnea` de validade curta).
+     * Faixas restauradas do histórico (persistido em localStorage) costumam
+     * chegar aqui com o link já vencido (Deezer responde 403 → o elemento
+     * de áudio fica sem fonte suportada). Nesse caso, buscamos um link novo
+     * pelo ID da faixa e tentamos tocar de novo uma única vez antes de
+     * desistir — só então mostramos o toast de "prévia indisponível".
+     */
     const handleError = () => {
       const track = usePlayerStore.getState().currentTrack;
       console.warn(`Falha ao carregar áudio da faixa "${track?.title ?? 'desconhecida'}"`, audio.error);
+
+      const isExpiredDeezerPreview = audio.src.includes('dzcdn.net');
+      const alreadyRetried = retriedTrackIdRef.current === track?.id;
+
+      if (isExpiredDeezerPreview && track && !alreadyRetried) {
+        retriedTrackIdRef.current = track.id;
+        fetchFreshPreviewUrl(track.id).then((freshUrl) => {
+          const stillCurrent = usePlayerStore.getState().currentTrack?.id === track.id;
+          if (!freshUrl || !stillCurrent) {
+            usePlayerStore.setState({ isPlaying: false });
+            showTransientFeedback(PREVIEW_UNAVAILABLE_MSG);
+            return;
+          }
+          usePlayerStore.setState((state) => ({
+            currentTrack: state.currentTrack ? { ...state.currentTrack, audioUrl: freshUrl } : state.currentTrack,
+          }));
+          audio.src = freshUrl;
+          audio.load();
+          safePlay(audio);
+        });
+        return;
+      }
+
       usePlayerStore.setState({ isPlaying: false });
       showTransientFeedback(PREVIEW_UNAVAILABLE_MSG);
     };

@@ -106,6 +106,23 @@ export const fetchGenreTracks = async (genreName: string): Promise<Track[]> => {
   }
 };
 
+/**
+ * Re-busca uma faixa pelo ID para obter uma nova URL de prévia assinada.
+ * As URLs de preview do Deezer expiram (token `hdnea` com `exp` de validade
+ * curta) — faixas tocadas há muito tempo (ex: restauradas do histórico
+ * persistido em localStorage) chegam ao player com o link já vencido
+ * (Deezer responde 403), então o player usa esta função para renovar o
+ * link antes de desistir de tocar a faixa.
+ */
+export const fetchFreshPreviewUrl = async (trackId: string): Promise<string | null> => {
+  try {
+    const data = await fetchDeezerJson(`${BASE_URL}/track/${trackId}`);
+    return data?.preview || null;
+  } catch {
+    return null;
+  }
+};
+
 export interface DeezerArtistDetails {
   id: string;
   name: string;
