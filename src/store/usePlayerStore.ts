@@ -63,6 +63,12 @@ interface PlayerState {
 
   searchDetailSnapshot: SearchDetailSnapshot | null;
   setSearchDetailSnapshot: (snapshot: SearchDetailSnapshot | null) => void;
+
+  /** Preferência do usuário pelo modo compacto (só ícones) da Sidebar
+   * desktop, mantida entre navegações e persistida entre sessões. */
+  isSidebarCollapsed: boolean;
+  setSidebarCollapsed: (collapsed: boolean) => void;
+  toggleSidebarCollapsed: () => void;
 }
 
 export const usePlayerStore = create<PlayerState>()(
@@ -87,6 +93,7 @@ export const usePlayerStore = create<PlayerState>()(
       activePublicPlaylistId: null,
       searchActiveFilter: 'Tudo',
       searchDetailSnapshot: null,
+      isSidebarCollapsed: false,
 
       setTrack: (track) =>
         set((state) => {
@@ -121,6 +128,9 @@ export const usePlayerStore = create<PlayerState>()(
       setActivePublicPlaylistId: (id) => set({ activePublicPlaylistId: id }),
       setSearchActiveFilter: (filter) => set({ searchActiveFilter: filter }),
       setSearchDetailSnapshot: (snapshot) => set({ searchDetailSnapshot: snapshot }),
+
+      setSidebarCollapsed: (collapsed) => set({ isSidebarCollapsed: collapsed }),
+      toggleSidebarCollapsed: () => set((state) => ({ isSidebarCollapsed: !state.isSidebarCollapsed })),
 
       toggleExpand: () => set((state) => ({ isExpanded: !state.isExpanded })),
       setExpandedTab: (tab) => set({ expandedTab: tab }),
@@ -197,7 +207,11 @@ export const usePlayerStore = create<PlayerState>()(
     }),
     {
       name: 'stream-music-storage', // chave no localStorage
-      partialize: (state) => ({ history: state.history, volume: state.volume }),
+      partialize: (state) => ({
+        history: state.history,
+        volume: state.volume,
+        isSidebarCollapsed: state.isSidebarCollapsed,
+      }),
     }
   )
 );
