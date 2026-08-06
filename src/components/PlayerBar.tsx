@@ -1,7 +1,6 @@
 import {
   Play, Pause, SkipBack, SkipForward,
   Volume2, VolumeX, Repeat, Maximize2,
-  ThumbsUp, ThumbsDown,
 } from 'lucide-react';
 import { usePlayerStore } from '../store/usePlayerStore';
 import { useAudioPlayer } from '../hooks/useAudioPlayer';
@@ -129,15 +128,6 @@ export function PlayerBar() {
                 )}{' '}
                 • 2.5M de visualizações
               </span>
-            </div>
-
-            <div className="hidden md:flex items-center gap-1 ml-4">
-              <button className="p-1.5 text-white/60 hover:text-white transition-colors">
-                <ThumbsDown className="w-4 h-4" />
-              </button>
-              <button className="p-1.5 text-white/60 hover:text-white transition-colors">
-                <ThumbsUp className="w-4 h-4" />
-              </button>
             </div>
           </>
         ) : (
