@@ -1,9 +1,10 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Sidebar } from './components/Sidebar';
 import { BottomNav } from './components/BottomNav';
 import { Header } from './components/Header';
 import { PlayerBar } from './components/PlayerBar';
+import { SplashScreen } from './components/SplashScreen';
 import { Home } from './pages/Home';
 import { Explore } from './pages/Explore';
 import { Search } from './pages/Search';
@@ -21,6 +22,9 @@ import { getArtistIdFromPath, getAlbumIdFromPath, getPlaylistIdFromPath } from '
 function App() {
   // Instancia atalhos globais de teclado
   useKeyboardShortcuts();
+
+  // Splash screen de entrada, exibida durante a inicialização do app
+  const [showSplash, setShowSplash] = useState(true);
 
   const {
     activePage, activePlaylistId, activeArtistId, activeAlbumId, activePublicPlaylistId,
@@ -69,43 +73,46 @@ function App() {
   }, [user?.uid, queryClient]);
 
   return (
-    <div className="h-dvh w-full flex flex-col bg-yt-black overflow-hidden relative">
-      {/* Top area: sidebar + content */}
-      <div className="flex-1 flex overflow-hidden">
-        {/* Sidebar */}
-        <Sidebar />
+    <>
+      {showSplash && <SplashScreen onFinish={() => setShowSplash(false)} />}
+      <div className={`h-dvh w-full flex flex-col bg-yt-black overflow-hidden relative ${showSplash ? 'invisible' : ''}`}>
+        {/* Top area: sidebar + content */}
+        <div className="flex-1 flex overflow-hidden">
+          {/* Sidebar */}
+          <Sidebar />
 
-        {/* Right content column */}
-        <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
-          <Header />
-          {activeAlbumId ? (
-            <AlbumPage albumId={activeAlbumId} />
-          ) : activePublicPlaylistId ? (
-            <PlaylistPage playlistId={activePublicPlaylistId} />
-          ) : activeArtistId ? (
-            <ArtistPage artistId={activeArtistId} />
-          ) : !activePlaylistId && activePage === 'EXPLORE' ? (
-            <Explore />
-          ) : !activePlaylistId && activePage === 'SEARCH' ? (
-            <Search />
-          ) : !activePlaylistId && activePage === 'LIBRARY' ? (
-            <Library />
-          ) : (
-            <Home />
-          )}
+          {/* Right content column */}
+          <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+            <Header />
+            {activeAlbumId ? (
+              <AlbumPage albumId={activeAlbumId} />
+            ) : activePublicPlaylistId ? (
+              <PlaylistPage playlistId={activePublicPlaylistId} />
+            ) : activeArtistId ? (
+              <ArtistPage artistId={activeArtistId} />
+            ) : !activePlaylistId && activePage === 'EXPLORE' ? (
+              <Explore />
+            ) : !activePlaylistId && activePage === 'SEARCH' ? (
+              <Search />
+            ) : !activePlaylistId && activePage === 'LIBRARY' ? (
+              <Library />
+            ) : (
+              <Home />
+            )}
+          </div>
         </div>
+
+        {/* Fixed player at bottom */}
+        <PlayerBar />
+        <BottomNav />
+
+        {/* Modal Global de Autenticação (Login / Cadastro) */}
+        <AuthModal />
+
+        {/* Onboarding Interativo (Guided Tour) — apenas no primeiro login */}
+        <OnboardingTour />
       </div>
-
-      {/* Fixed player at bottom */}
-      <PlayerBar />
-  <BottomNav />
-
-      {/* Modal Global de Autenticação (Login / Cadastro) */}
-      <AuthModal />
-
-      {/* Onboarding Interativo (Guided Tour) — apenas no primeiro login */}
-      <OnboardingTour />
-    </div>
+    </>
   );
 }
 
