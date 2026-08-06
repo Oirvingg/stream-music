@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import {
-  ChevronDown, Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, Repeat, ThumbsUp, ThumbsDown, Music2,
-  Cast, MoreVertical, Star, Shuffle, PlaySquare, ListPlus, Bookmark, Download, Share2,
+  ChevronDown, Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, Repeat, Heart, Music2,
+  Cast, MoreVertical, Shuffle, PlaySquare, ListPlus, Bookmark, Download, Share2,
 } from 'lucide-react';
 import { usePlayerStore } from '../store/usePlayerStore';
 import { useLyrics } from '../hooks/useLyrics';
@@ -168,6 +168,7 @@ export function ExpandedPlayer({ seek }: ExpandedPlayerProps) {
   const { data: relatedArtists = [], isLoading: isLoadingRelated } = useArtistRelated(artistId);
 
   const menuItems: CardMenuItem[] = currentTrack ? [
+    { id: 'shuffle', icon: Shuffle, label: 'Aleatório', onClick: () => shuffleQueue() },
     { id: 'play-next', icon: PlaySquare, label: 'Tocar a seguir', onClick: () => playNext(currentTrack) },
     { id: 'add-queue', icon: ListPlus, label: 'Adicionar à fila', onClick: () => addToQueue(currentTrack) },
     { id: 'save-playlist', icon: Bookmark, label: 'Salvar na playlist', onClick: () => setSaveModalOpen(true) },
@@ -380,7 +381,7 @@ export function ExpandedPlayer({ seek }: ExpandedPlayerProps) {
                     onClick={() => toggleFavoriteTrack.mutate(currentTrack)}
                     className="p-1.5 text-white/70 hover:text-white transition-colors shrink-0"
                   >
-                    <Star className={`w-6 h-6 ${isLiked ? 'fill-red-500 text-red-500' : ''}`} />
+                    <Heart className={`w-6 h-6 ${isLiked ? 'fill-red-500 text-red-500' : ''}`} />
                   </button>
                 </div>
                 <p className="text-sm text-[#AAAAAA] truncate -mt-3">
@@ -472,13 +473,6 @@ export function ExpandedPlayer({ seek }: ExpandedPlayerProps) {
           )}
             </>
           )}
-
-          {menuOpen && menuAnchor && (
-            <CardMenuDropdown anchorRect={menuAnchor} items={menuItems} onClose={() => setMenuOpen(false)} />
-          )}
-          {currentTrack && (
-            <SaveToPlaylistModal isOpen={saveModalOpen} onClose={() => setSaveModalOpen(false)} track={currentTrack} />
-          )}
         </>
       ) : (
         <>
@@ -533,11 +527,20 @@ export function ExpandedPlayer({ seek }: ExpandedPlayerProps) {
                     </div>
 
                     <div className="flex items-center gap-2 shrink-0 mt-1">
-                      <button className="p-3 text-white/60 hover:text-white hover:bg-white/10 rounded-full transition-colors">
-                        <ThumbsDown className="w-6 h-6" />
+                      <button
+                        onClick={() => toggleFavoriteTrack.mutate(currentTrack)}
+                        className="p-3 text-white/60 hover:text-white hover:bg-white/10 rounded-full transition-colors"
+                      >
+                        <Heart className={`w-6 h-6 ${isLiked ? 'fill-red-500 text-red-500' : ''}`} />
                       </button>
-                      <button className="p-3 text-white/60 hover:text-white hover:bg-white/10 rounded-full transition-colors">
-                        <ThumbsUp className="w-6 h-6" />
+                      <button
+                        onClick={(e) => {
+                          setMenuAnchor(e.currentTarget.getBoundingClientRect());
+                          setMenuOpen(true);
+                        }}
+                        className="p-3 text-white/60 hover:text-white hover:bg-white/10 rounded-full transition-colors"
+                      >
+                        <MoreVertical className="w-6 h-6" />
                       </button>
                     </div>
                   </div>
@@ -600,9 +603,9 @@ export function ExpandedPlayer({ seek }: ExpandedPlayerProps) {
             {/* Controls */}
             <div className="flex items-center justify-between">
               {/* Left Controls */}
-              <div className="flex items-center gap-4 w-1/3">
-                {/* Removed ThumbsUp and ThumbsDown to move them under the artwork */}
-              </div>
+              {/* Espaço reservado para simetria do layout (curtir/menu ficam junto ao título) */}
+              <div className="flex items-center gap-4 w-1/3" />
+
 
               {/* Center Transport */}
               <div className="flex items-center justify-center gap-6 w-1/3">
@@ -653,6 +656,15 @@ export function ExpandedPlayer({ seek }: ExpandedPlayerProps) {
             </div>
           </div>
         </>
+      )}
+
+      {/* Menu de opções e modal de salvar em playlist — compartilhados pelos
+          botões de "mais opções" do desktop e do mobile. */}
+      {menuOpen && menuAnchor && (
+        <CardMenuDropdown anchorRect={menuAnchor} items={menuItems} onClose={() => setMenuOpen(false)} />
+      )}
+      {currentTrack && (
+        <SaveToPlaylistModal isOpen={saveModalOpen} onClose={() => setSaveModalOpen(false)} track={currentTrack} />
       )}
     </div>
   );

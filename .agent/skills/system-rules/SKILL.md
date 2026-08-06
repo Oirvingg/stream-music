@@ -9,3 +9,4 @@ description: Rules to enforce extremely brief responses and prevent unnecessary 
 - Perform all required file edits, commands, and refactoring silently.
 - Upon completing a task, respond ONLY with a short confirmation message (e.g., "Done.", "Changes applied.", or "Updated successfully.").
 - If an error occurs that prevents task execution, report only the exact error and the required fix.
+- Sempre suba o codigo atualizado para o git hub, sem explicações adicionais.
