@@ -268,6 +268,18 @@ export function OnboardingTour() {
     usePlayerStore.setState({ isExpanded: false });
   }, []);
 
+  // Bloqueia o scroll do body enquanto o tour estiver ativo — sem isso, no
+  // mobile é possível arrastar a página por trás do overlay e desalinhar o
+  // spotlight do alvo destacado.
+  useEffect(() => {
+    if (!run) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [run]);
+
   return (
     <Joyride
       run={run}
@@ -298,7 +310,22 @@ export function OnboardingTour() {
       }}
       styles={{
         spotlight: { stroke: '#ff0000', strokeWidth: 2 },
-        overlay: { transition: 'opacity 0.3s ease' },
+        // O Joyride usa `position: absolute` por padrão, ancorado ao
+        // ancestral posicionado mais próximo (a div raiz do App, que tem
+        // `overflow-hidden`) e calcula a altura via JS (window.innerHeight/
+        // document height) — no mobile isso não acompanha a barra de
+        // endereço dinâmica do navegador e fica sujeito ao clipping do
+        // container pai, deixando faixas sem o overlay escurecido nas
+        // bordas/rodapé. `fixed` + `inset: 0` + `100dvh` ancoram direto na
+        // viewport, ignorando containers pais.
+        overlay: {
+          transition: 'opacity 0.3s ease',
+          position: 'fixed',
+          inset: 0,
+          width: '100vw',
+          height: '100dvh',
+          zIndex: 9999,
+        },
         tooltip: { borderRadius: 12, transition: 'transform 0.3s ease, opacity 0.3s ease' },
         tooltipTitle: { fontSize: 16, fontWeight: 700, marginBottom: 4 },
         tooltipContent: { fontSize: 14, color: '#aaaaaa', padding: '8px 0' },
