@@ -6,7 +6,7 @@ import { getArtistName, Track } from '../types/music';
 import { goToAlbum, goToPlaylist } from '../utils/navigation';
 import { JukeboxItem } from '../hooks/useJukeboxItems';
 
-const PAGE_SIZE = 12;
+const PAGE_SIZE = 9;
 
 function chunk<T>(items: T[], size: number): T[][] {
   const pages: T[][] = [];
@@ -22,7 +22,7 @@ interface JukeboxGridProps {
 }
 
 /**
- * "Jukebox digital" — grid 3x4 paginado, estilo "Quick Picks" do YouTube
+ * "Jukebox digital" — grid 3x3 paginado, estilo "Quick Picks" do YouTube
  * Music, exibido só no mobile na Home (o desktop mantém as seções
  * horizontais tradicionais). Mistura faixas, álbuns e playlists — cada tipo
  * tem seu próprio destino de clique (tocar vs. navegar para a tela de
@@ -52,7 +52,7 @@ export function JukeboxGrid({ items, isLoading }: JukeboxGridProps) {
             <div className="h-4 w-32 bg-zinc-800 rounded" />
           </div>
         </div>
-        <div className="grid grid-cols-3 grid-rows-4 gap-3">
+        <div className="grid grid-cols-3 grid-rows-3 gap-5">
           {Array.from({ length: PAGE_SIZE }).map((_, i) => (
             <div key={i} className="aspect-square rounded-lg bg-zinc-800" />
           ))}
@@ -87,7 +87,7 @@ export function JukeboxGrid({ items, isLoading }: JukeboxGridProps) {
         <ChevronRight className="w-5 h-5 text-white/60 shrink-0" />
       </div>
 
-      {/* Grid 3x4 paginado com scroll-snap lateral */}
+      {/* Grid 3x3 paginado com scroll-snap lateral */}
       <div
         ref={scrollRef}
         onScroll={handleScroll}
@@ -96,7 +96,7 @@ export function JukeboxGrid({ items, isLoading }: JukeboxGridProps) {
         {pages.map((pageItems, pageIdx) => (
           <div
             key={pageIdx}
-            className="grid grid-cols-3 grid-rows-4 gap-3 shrink-0 w-full snap-start snap-always"
+            className="grid grid-cols-3 grid-rows-3 gap-5 shrink-0 w-full snap-start snap-always"
           >
             {pageItems.map((item) => (
               <JukeboxTile key={item.key} item={item} trackList={trackList} />
