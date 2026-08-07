@@ -66,7 +66,7 @@ export function Search() {
         </div>
       </div>
 
-      <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-3 md:px-6 pb-32 md:pb-4">
+      <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-3 md:px-6 pb-20 md:pb-4">
         {searchQuery ? (
           <SearchResults query={searchQuery} searchResults={searchResults} isSearchingTracks={isSearchingTracks} />
         ) : (

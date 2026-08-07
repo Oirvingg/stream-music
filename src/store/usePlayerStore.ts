@@ -69,6 +69,11 @@ interface PlayerState {
   isSidebarCollapsed: boolean;
   setSidebarCollapsed: (collapsed: boolean) => void;
   toggleSidebarCollapsed: () => void;
+
+  /** Estado do drawer lateral no mobile web — aberto pelo ícone de menu
+   * no Header. Não é persistido: sempre inicia fechado a cada sessão. */
+  isMobileSidebarOpen: boolean;
+  setMobileSidebarOpen: (open: boolean) => void;
 }
 
 export const usePlayerStore = create<PlayerState>()(
@@ -94,6 +99,7 @@ export const usePlayerStore = create<PlayerState>()(
       searchActiveFilter: 'Tudo',
       searchDetailSnapshot: null,
       isSidebarCollapsed: false,
+      isMobileSidebarOpen: false,
 
       setTrack: (track) =>
         set((state) => {
@@ -131,6 +137,8 @@ export const usePlayerStore = create<PlayerState>()(
 
       setSidebarCollapsed: (collapsed) => set({ isSidebarCollapsed: collapsed }),
       toggleSidebarCollapsed: () => set((state) => ({ isSidebarCollapsed: !state.isSidebarCollapsed })),
+
+      setMobileSidebarOpen: (open) => set({ isMobileSidebarOpen: open }),
 
       toggleExpand: () => set((state) => ({ isExpanded: !state.isExpanded })),
       setExpandedTab: (tab) => set({ expandedTab: tab }),

@@ -78,19 +78,20 @@ function buildSteps(
 
   // A busca e a Biblioteca vivem em elementos diferentes conforme o
   // breakpoint: no desktop são a barra de pesquisa do Header e o link da
-  // Sidebar; no mobile (onde Header/Sidebar ficam `hidden`) são os botões
-  // "Buscar"/"Biblioteca" da BottomNav. Como os dois pares de elementos
-  // coexistem no DOM (só um visível via CSS por vez), apontar sempre para
-  // o mesmo seletor faria o Joyride encontrar o nó oculto do breakpoint
-  // errado — por isso o alvo é escolhido de acordo com `isMobile`.
+  // Sidebar; no mobile, foram removidos da BottomNav (que não existe mais)
+  // — agora vivem no drawer MobileSidebar, aberto pelo botão hamburger do
+  // Header. Como os dois pares de elementos coexistem no DOM (só um visível
+  // via CSS por vez), apontar sempre para o mesmo seletor faria o Joyride
+  // encontrar o nó oculto do breakpoint errado — por isso o alvo é
+  // escolhido de acordo com `isMobile`.
   const steps: Step[] = [
     {
-      target: isMobile ? '[data-tour="search-bar-mobile"]' : '[data-tour="search-bar"]',
+      target: isMobile ? '[data-tour="mobile-menu"]' : '[data-tour="search-bar"]',
       title: 'Encontre sua vibe',
       content: isMobile
-        ? 'Toque em "Buscar" na barra inferior para achar artistas, músicas ou álbuns.'
+        ? 'Toque no menu (hamburger) para abrir a navegação e achar artistas, músicas ou álbuns.'
         : 'Pesquise por artistas, músicas ou álbuns usando o poder das APIs Deezer e Last.fm.',
-      placement: isMobile ? 'top' : 'bottom',
+      placement: isMobile ? 'bottom' : 'bottom',
       skipBeacon: true,
     },
     {
@@ -105,8 +106,15 @@ function buildSteps(
       target: isMobile ? '[data-tour="sidebar-library-mobile"]' : '[data-tour="sidebar-library"]',
       title: 'Sua Coleção',
       content: 'Aqui você acessa suas músicas curtidas, artistas favoritos e as playlists que você criar.',
-      placement: isMobile ? 'top' : 'right',
+      placement: isMobile ? 'right' : 'right',
       skipBeacon: true,
+      targetWaitTimeout: 5000,
+      before: async () => {
+        if (isMobile) {
+          usePlayerStore.setState({ isMobileSidebarOpen: true });
+          await wait(350);
+        }
+      },
     },
     {
       target: '[data-tour="player-bar"]',

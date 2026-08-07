@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Sidebar } from './components/Sidebar';
-import { BottomNav } from './components/BottomNav';
+import { MobileSidebar } from './components/MobileSidebar';
 import { Header } from './components/Header';
 import { PlayerBar } from './components/PlayerBar';
 import { SplashScreen } from './components/SplashScreen';
@@ -82,8 +82,8 @@ function App() {
           {/* Sidebar */}
           <Sidebar />
 
-          {/* Right content column */}
-          <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+          {/* Right content column — ajusta-se dinamicamente à largura da Sidebar */}
+          <div className="flex-1 min-h-0 flex flex-col overflow-hidden transition-all duration-300">
             <Header />
             {activeAlbumId ? (
               <AlbumPage albumId={activeAlbumId} />
@@ -107,7 +107,9 @@ function App() {
 
         {/* Fixed player at bottom */}
         <PlayerBar />
-        <BottomNav />
+
+        {/* Drawer lateral para mobile web (aberto pelo hamburger no Header) */}
+        <MobileSidebar />
 
         {/* Modal Global de Autenticação (Login / Cadastro) */}
         <AuthModal />

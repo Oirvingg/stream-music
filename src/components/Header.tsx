@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Search, Cast, LogIn } from 'lucide-react';
+import { Search, Cast, LogIn, Menu } from 'lucide-react';
 import { usePlayerStore } from '../store/usePlayerStore';
 import { useAuthStore } from '../store/useAuthStore';
 import { SearchSuggestions } from './SearchSuggestions';
@@ -9,7 +9,7 @@ export function Header() {
   const [query, setQuery] = useState('');
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [suggestionsOpen, setSuggestionsOpen] = useState(false);
-  const { homeSearchQuery, setHomeSearchQuery } = usePlayerStore();
+  const { homeSearchQuery, setHomeSearchQuery, setMobileSidebarOpen } = usePlayerStore();
   const { user, isAuthenticated, setAuthModalOpen } = useAuthStore();
 
   // Mantém a caixa de busca em sincronia quando a pesquisa é limpa
@@ -28,14 +28,25 @@ export function Header() {
   return (
     <>
       <header className="flex items-center justify-between h-14 md:h-16 px-3 md:px-6 gap-2 bg-transparent shrink-0 relative z-30">
-        {/* Left — Logo (apenas mobile, a Sidebar já cobre isso no desktop) */}
-        <div className="flex md:hidden items-center gap-2">
-          <div className="w-7 h-7 rounded-full bg-red-600 flex items-center justify-center shrink-0">
-            <svg viewBox="0 0 24 24" fill="white" className="w-4 h-4">
-              <path d="M10 8.64L15.27 12 10 15.36V8.64M8 5v14l11-7L8 5z" />
-            </svg>
+        {/* Left — Hamburger + Logo (apenas mobile, a Sidebar já cobre isso no desktop) */}
+        <div className="flex md:hidden items-center gap-1">
+          <button
+            onClick={() => setMobileSidebarOpen(true)}
+            title="Abrir menu"
+            aria-label="Abrir menu"
+            data-tour="mobile-menu"
+            className="p-2 rounded-full text-yt-text-secondary hover:text-white hover:bg-white/10 transition-colors shrink-0"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
+          <div className="flex items-center gap-2 pl-1">
+            <div className="w-7 h-7 rounded-full bg-red-600 flex items-center justify-center shrink-0">
+              <svg viewBox="0 0 24 24" fill="white" className="w-4 h-4">
+                <path d="M10 8.64L15.27 12 10 15.36V8.64M8 5v14l11-7L8 5z" />
+              </svg>
+            </div>
+            <span className="text-base font-semibold tracking-tight text-white">Stream</span>
           </div>
-          <span className="text-base font-semibold tracking-tight text-white">Stream</span>
         </div>
 
         {/* Left — Empty spacer (apenas desktop, centraliza a busca) */}

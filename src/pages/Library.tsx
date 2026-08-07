@@ -123,7 +123,7 @@ export function Library() {
         })}
       </div>
 
-      <div className="flex-1 min-h-0 overflow-y-auto pb-40 md:pb-12">
+      <div className="flex-1 min-h-0 overflow-y-auto pb-20 md:pb-12">
         {showFavorites && (
           <section className="mb-10">
             <h2 className="text-base md:text-[22px] font-semibold text-white mb-4 flex items-center gap-2">

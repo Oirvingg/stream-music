@@ -139,7 +139,7 @@ export function Explore() {
   }
 
   return (
-    <main className="flex-1 min-h-0 flex flex-col overflow-y-auto px-3 md:px-6 py-6 md:py-8 pb-32 md:pb-8">
+    <main className="flex-1 min-h-0 flex flex-col overflow-y-auto px-3 md:px-6 py-6 md:py-8 pb-20 md:pb-8">
       <h1 className="text-2xl md:text-4xl font-bold text-white mb-6 md:mb-8">Explorar</h1>
 
       <section className="mb-12">
