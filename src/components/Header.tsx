@@ -3,6 +3,7 @@ import { Search, Cast, LogIn, Menu, X } from 'lucide-react';
 import { usePlayerStore } from '../store/usePlayerStore';
 import { useAuthStore } from '../store/useAuthStore';
 import { SearchSuggestions } from './SearchSuggestions';
+import { MobileSearchOverlay } from './MobileSearchOverlay';
 import { ProfileMenu } from './ProfileMenu';
 import { goToSearch } from '../utils/navigation';
 
@@ -166,59 +167,18 @@ export function Header() {
 
       {/* Mobile Search Overlay — tela cheia de busca no mobile */}
       {mobileSearchActive && (
-        <div className="fixed inset-0 bg-yt-black z-40 flex flex-col md:hidden">
-          {/* Search Input Bar */}
-          <div className="flex items-center gap-2 px-3 py-3 shrink-0 bg-yt-black border-b border-white/10">
-            <button
-              onClick={handleMobileSearchClose}
-              aria-label="Voltar"
-              className="p-2 -ml-1 text-white/80 hover:text-white rounded-full hover:bg-white/10 transition-colors shrink-0"
-            >
-              <Search className="w-5 h-5" />
-            </button>
-            <div className="relative flex-1 min-w-0">
-              <input
-                ref={mobileInputRef}
-                type="text"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                onKeyDown={handleSearch}
-                onFocus={() => setSuggestionsOpen(true)}
-                placeholder="Pesquise músicas, álbuns, artistas"
-                className="w-full h-11 pl-4 pr-10 bg-yt-search-bg border border-yt-border/50 rounded-full text-sm text-white placeholder:text-yt-text-tertiary focus:outline-none focus:border-white/30 transition-colors"
-              />
-              {query && (
-                <button
-                  onClick={handleClearSearch}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-yt-text-secondary hover:text-white transition-colors p-1"
-                  aria-label="Limpar"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              )}
-              {suggestionsOpen && (
-                <SearchSuggestions
-                  query={query}
-                  onClose={() => setSuggestionsOpen(false)}
-                  onSelectTerm={(term) => {
-                    setQuery(term);
-                    setHomeSearchQuery(term);
-                    setSuggestionsOpen(false);
-                  }}
-                />
-              )}
-            </div>
-          </div>
-
-          {/* Results Area */}
-          <div className="flex-1 overflow-y-auto">
-            {query.trim() === '' ? (
-              <div className="text-center py-12 text-yt-text-secondary">
-                <p>Comece a digitar para buscar</p>
-              </div>
-            ) : null}
-          </div>
-        </div>
+        <MobileSearchOverlay
+          query={query}
+          inputRef={mobileInputRef}
+          onQueryChange={setQuery}
+          onSearch={handleSearch}
+          onClear={handleClearSearch}
+          onClose={handleMobileSearchClose}
+          onSelectTerm={(term) => {
+            setQuery(term);
+            setHomeSearchQuery(term);
+          }}
+        />
       )}
     </>
   );
