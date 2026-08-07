@@ -1,0 +1,1 @@
+Neste arquivo você vai guardar as informações mais importantes para que não esqueça ao evoluir o projeto.
