@@ -1,5 +1,5 @@
-import { useEffect, useRef } from 'react';
-import { Search } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { Search, Clock, X } from 'lucide-react';
 import { usePlayerStore } from '../store/usePlayerStore';
 import { useSearchSuggestions } from '../hooks/useMusicQueries';
 import { useDebouncedValue } from '../hooks/useDebouncedValue';
@@ -18,11 +18,49 @@ interface SearchSuggestionsProps {
   onClose: () => void;
 }
 
+// Funções de histórico de busca (localStorage)
+function getSearchHistory(): string[] {
+  try {
+    const stored = localStorage.getItem('searchHistory');
+    return stored ? JSON.parse(stored) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveSearchHistory(searches: string[]) {
+  try {
+    localStorage.setItem('searchHistory', JSON.stringify(searches.slice(0, 10))); // Limita a 10 buscas
+  } catch {
+    // Silenciar erros de storage
+  }
+}
+
+function addToSearchHistory(term: string) {
+  const history = getSearchHistory();
+  const filtered = history.filter((s) => s.toLowerCase() !== term.toLowerCase());
+  const updated = [term, ...filtered];
+  saveSearchHistory(updated);
+}
+
+function clearSearchHistory() {
+  try {
+    localStorage.removeItem('searchHistory');
+  } catch {
+    // Silenciar erros
+  }
+}
+
 export function SearchSuggestions({ query, onSelectTerm, onClose }: SearchSuggestionsProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const { setQueue, setTrack } = usePlayerStore();
+  const [searchHistory, setSearchHistory] = useState<string[]>([]);
   const debouncedQuery = useDebouncedValue(query, 300);
   const { tracks, artists, isLoading } = useSearchSuggestions(debouncedQuery);
+
+  useEffect(() => {
+    setSearchHistory(getSearchHistory());
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -44,6 +82,51 @@ export function SearchSuggestions({ query, onSelectTerm, onClose }: SearchSugges
       document.removeEventListener('keydown', handleEscape);
     };
   }, [onClose]);
+
+  // Se o campo está vazio, mostre o histórico
+  if (query.trim().length === 0) {
+    if (searchHistory.length === 0) return null;
+    
+    return (
+      <div
+        ref={containerRef}
+        className="absolute top-full left-0 right-0 mt-2 z-50 bg-[#1a1a1a] border border-white/10 rounded-xl shadow-2xl overflow-hidden max-h-[70vh] overflow-y-auto"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="py-1.5">
+          <div className="px-4 py-2 flex items-center justify-between">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-yt-text-secondary">
+              Buscas Recentes
+            </p>
+            <button
+              onClick={() => {
+                clearSearchHistory();
+                setSearchHistory([]);
+              }}
+              className="text-[11px] text-yt-text-secondary hover:text-white transition-colors"
+            >
+              Limpar
+            </button>
+          </div>
+          {searchHistory.map((term) => (
+            <button
+              key={term}
+              type="button"
+              onClick={() => {
+                onSelectTerm(term);
+                addToSearchHistory(term);
+              }}
+              className="flex items-center gap-3 w-full px-4 py-2 text-sm text-white hover:bg-white/10 transition-colors text-left group"
+            >
+              <Clock className="w-4 h-4 shrink-0 text-yt-text-secondary" />
+              <span className="truncate flex-1">{term}</span>
+              <X className="w-4 h-4 shrink-0 text-yt-text-secondary opacity-0 group-hover:opacity-100 transition-opacity" />
+            </button>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   if (query.trim().length <= 1) return null;
 
@@ -67,6 +150,24 @@ export function SearchSuggestions({ query, onSelectTerm, onClose }: SearchSugges
 
   const hasResults = suggestedTerms.length > 0 || artists.length > 0 || tracks.length > 0;
 
+  const handleSelectTerm = (term: string) => {
+    addToSearchHistory(term);
+    onSelectTerm(term);
+  };
+
+  const handleTrackSelect = (track: any) => {
+    addToSearchHistory(track.title);
+    setQueue(tracks);
+    setTrack(track);
+    onClose();
+  };
+
+  const handleArtistSelect = (artistName: string, artistId: string) => {
+    addToSearchHistory(artistName);
+    goToArtist(artistId);
+    onClose();
+  };
+
   return (
     <div
       ref={containerRef}
@@ -85,7 +186,7 @@ export function SearchSuggestions({ query, onSelectTerm, onClose }: SearchSugges
                 <button
                   key={term}
                   type="button"
-                  onClick={() => onSelectTerm(term)}
+                  onClick={() => handleSelectTerm(term)}
                   className="flex items-center gap-3 w-full px-4 py-2 text-sm text-white hover:bg-white/10 transition-colors text-left"
                 >
                   <Search className="w-4 h-4 shrink-0 text-yt-text-secondary" />
@@ -104,10 +205,7 @@ export function SearchSuggestions({ query, onSelectTerm, onClose }: SearchSugges
                 <button
                   key={artist.id}
                   type="button"
-                  onClick={() => {
-                    goToArtist(artist.id);
-                    onClose();
-                  }}
+                  onClick={() => handleArtistSelect(artist.name, artist.id)}
                   className="flex items-center gap-3 w-full px-4 py-2 hover:bg-white/10 transition-colors text-left"
                 >
                   <img
@@ -137,11 +235,7 @@ export function SearchSuggestions({ query, onSelectTerm, onClose }: SearchSugges
                 <button
                   key={track.id}
                   type="button"
-                  onClick={() => {
-                    setQueue(tracks);
-                    setTrack(track);
-                    onClose();
-                  }}
+                  onClick={() => handleTrackSelect(track)}
                   className="flex items-center gap-3 w-full px-4 py-2 hover:bg-white/10 transition-colors text-left"
                 >
                   <img src={track.coverUrl} alt={track.title} className="w-10 h-10 rounded object-cover shrink-0" />
