@@ -157,7 +157,7 @@ export function ArtistPage({ artistId }: ArtistPageProps) {
           <button
             onClick={handleShuffle}
             disabled={topTracks.length === 0}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-white text-black text-sm font-semibold hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center gap-2 px-6 py-2 rounded-full bg-white text-black text-xs font-bold hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
           >
             <Shuffle className="w-4 h-4" />
             Aleatório
@@ -165,7 +165,7 @@ export function ArtistPage({ artistId }: ArtistPageProps) {
           <button
             onClick={handleMix}
             disabled={topTracks.length === 0}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/10 hover:bg-white/20 text-sm font-semibold text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center gap-2 px-6 py-2 rounded-full bg-white/10 hover:bg-white/20 text-xs font-bold text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
           >
             <Music className="w-4 h-4" />
             Mix
