@@ -78,7 +78,6 @@ A aplicação permite pesquisar músicas em catálogos reais (Deezer e Last.fm),
 - **PostCSS** e **Autoprefixer**
 - **ESLint/tsc** para checagem de tipos no build
 - **Git** para versionamento
-- **Google Antigravity** como ambiente/agente de apoio ao desenvolvimento
 
 ## 🏗️ Arquitetura e Integrações Externas
 
