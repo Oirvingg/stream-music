@@ -44,6 +44,8 @@ export function TrackCard({
     shuffleQueue,
     playNext,
     addToQueue,
+    currentTime,
+    duration,
   } = usePlayerStore();
   const { data: likedTracks = [] } = useFavoriteTracks();
   const toggleFavoriteTrack = useToggleFavoriteTrack();
@@ -182,8 +184,13 @@ export function TrackCard({
             </div>
           </div>
 
-          {isActive && (
-            <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-white" />
+          {isActive && duration > 0 && (
+            <div className="absolute bottom-0 left-0 right-0 h-[3px] overflow-hidden bg-white/20">
+              <div 
+                className="h-full bg-red-500 transition-all duration-100"
+                style={{ width: `${(currentTime / duration) * 100}%` }}
+              />
+            </div>
           )}
 
           <button
