@@ -92,30 +92,35 @@ export function useAudioPlayer() {
      * pelo ID da faixa e tentamos tocar de novo uma única vez antes de
      * desistir — só então mostramos o toast de "prévia indisponível".
      */
-    const handleError = () => {
+    const handleError = async () => {
       const track = usePlayerStore.getState().currentTrack;
       console.warn(`Falha ao carregar áudio da faixa "${track?.title ?? 'desconhecida'}"`, audio.error);
 
-      const isExpiredDeezerPreview = audio.src.includes('dzcdn.net');
       const alreadyRetried = retriedTrackIdRef.current === track?.id;
 
-      if (isExpiredDeezerPreview && track && !alreadyRetried) {
+      // Tenta renovar o link para qualquer faixa (não apenas Deezer) na primeira falha
+      if (track && !alreadyRetried) {
         retriedTrackIdRef.current = track.id;
-        fetchFreshPreviewUrl(track.id).then((freshUrl) => {
+        try {
+          const freshUrl = await fetchFreshPreviewUrl(track.id);
           const stillCurrent = usePlayerStore.getState().currentTrack?.id === track.id;
+          
           if (!freshUrl || !stillCurrent) {
             usePlayerStore.setState({ isPlaying: false });
             showTransientFeedback(PREVIEW_UNAVAILABLE_MSG);
             return;
           }
+          
           usePlayerStore.setState((state) => ({
             currentTrack: state.currentTrack ? { ...state.currentTrack, audioUrl: freshUrl } : state.currentTrack,
           }));
           audio.src = freshUrl;
           audio.load();
-          safePlay(audio);
-        });
-        return;
+          await safePlay(audio);
+          return;
+        } catch (err) {
+          console.warn('Falha ao renovar prévia:', err);
+        }
       }
 
       usePlayerStore.setState({ isPlaying: false });
