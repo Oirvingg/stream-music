@@ -102,20 +102,7 @@ function buildSteps(
       targetWaitTimeout: 5000,
       skipBeacon: true,
     },
-    {
-      target: isMobile ? '[data-tour="sidebar-library-mobile"]' : '[data-tour="sidebar-library"]',
-      title: 'Sua Coleção',
-      content: 'Aqui você acessa suas músicas curtidas, artistas favoritos e as playlists que você criar.',
-      placement: isMobile ? 'right' : 'right',
-      skipBeacon: true,
-      targetWaitTimeout: 5000,
-      before: async () => {
-        if (isMobile) {
-          usePlayerStore.setState({ isMobileSidebarOpen: true });
-          await wait(350);
-        }
-      },
-    },
+
     {
       target: '[data-tour="player-bar"]',
       title: 'Controle Total',
@@ -318,14 +305,6 @@ export function OnboardingTour() {
       }}
       styles={{
         spotlight: { stroke: '#ff0000', strokeWidth: 2 },
-        // O Joyride usa `position: absolute` por padrão, ancorado ao
-        // ancestral posicionado mais próximo (a div raiz do App, que tem
-        // `overflow-hidden`) e calcula a altura via JS (window.innerHeight/
-        // document height) — no mobile isso não acompanha a barra de
-        // endereço dinâmica do navegador e fica sujeito ao clipping do
-        // container pai, deixando faixas sem o overlay escurecido nas
-        // bordas/rodapé. `fixed` + `inset: 0` + `100dvh` ancoram direto na
-        // viewport, ignorando containers pais.
         overlay: {
           transition: 'opacity 0.3s ease',
           position: 'fixed',
@@ -338,7 +317,13 @@ export function OnboardingTour() {
           zIndex: 9999,
           backgroundColor: 'rgba(0, 0, 0, 0.8)',
         },
-        tooltip: { borderRadius: 12, transition: 'transform 0.3s ease, opacity 0.3s ease' },
+        tooltip: {
+          borderRadius: 12,
+          transition: 'transform 0.3s ease, opacity 0.3s ease',
+          maxWidth: 'calc(100vw - 32px)',
+          padding: '12px 16px',
+          zIndex: 10001,
+        },
         tooltipTitle: { fontSize: 16, fontWeight: 700, marginBottom: 4 },
         tooltipContent: { fontSize: 14, color: '#aaaaaa', padding: '8px 0' },
         buttonPrimary: {
