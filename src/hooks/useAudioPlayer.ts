@@ -34,9 +34,34 @@ export function useAudioPlayer() {
   const currentTrack = usePlayerStore((state) => state.currentTrack);
   const isPlaying = usePlayerStore((state) => state.isPlaying);
   const volume = usePlayerStore((state) => state.volume);
+  const history = usePlayerStore((state) => state.history);
   /** Evita retry infinito: só tentamos renovar o link de prévia expirado
    * uma vez por faixa selecionada. */
   const retriedTrackIdRef = useRef<string | null>(null);
+
+  // Renova URLs de histórico expiradas na primeira montagem
+  useEffect(() => {
+    const renewHistoryUrls = async () => {
+      const state = usePlayerStore.getState();
+      let updated = false;
+      const renewedHistory = await Promise.all(
+        state.history.map(async (track) => {
+          if (!track.audioUrl || track.audioUrl.includes('403') || track.audioUrl.trim() === '') {
+            const freshUrl = await fetchFreshPreviewUrl(track.id);
+            if (freshUrl) {
+              updated = true;
+              return { ...track, audioUrl: freshUrl };
+            }
+          }
+          return track;
+        })
+      );
+      if (updated) {
+        usePlayerStore.setState({ history: renewedHistory });
+      }
+    };
+    renewHistoryUrls();
+  }, []);
 
   useEffect(() => {
     if (!audioRef.current) {
