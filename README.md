@@ -25,7 +25,6 @@ Uma aplicação web moderna de streaming de música, com player em tempo real, b
 - [Como Executar Localmente](#-como-executar-localmente)
 - [Variáveis de Ambiente](#-variáveis-de-ambiente)
 - [Scripts Disponíveis](#-scripts-disponíveis)
-- [Documentação da API](#-documentação-da-api)
 - [Atalhos de Teclado](#-atalhos-de-teclado)
 - [Roadmap](#-roadmap)
 - [Contribuição](#-contribuição)
@@ -84,7 +83,7 @@ A aplicação permite pesquisar músicas em catálogos reais (Deezer e Last.fm),
 O projeto é dividido em duas partes que rodam de forma independente:
 
 1. **Cliente (SPA em React/Vite)** — responsável por toda a interface, reprodução de áudio e chamadas às APIs externas (Deezer, Last.fm, Lyrics.ovh) e à API própria.
-2. **Servidor (Node.js/Express)** — expõe uma API REST própria (`/auth`, `/songs`, `/api/playlists`, `/api/user/favorites`, `/api/categories`) com documentação Swagger, autenticação via JWT e persistência em PostgreSQL.
+2. **Servidor (Node.js/Express)** — expõe uma API REST própria (`/auth`, `/songs`, `/api/playlists`, `/api/user/favorites`, `/api/categories`) , autenticação via JWT e persistência em PostgreSQL.
 
 ```
 ┌────────────────────┐        ┌─────────────────────┐
@@ -159,7 +158,7 @@ npm run dev
 npm run server
 ```
 
-A aplicação front-end estará disponível em `http://localhost:5173` e a API em `http://localhost:3000`.
+
 
 ## 🔑 Variáveis de Ambiente
 
@@ -192,30 +191,7 @@ DB_NAME=
 | `npm run build`    | Verifica os tipos (`tsc`) e gera o build de produção     |
 | `npm run preview`  | Serve o build de produção localmente                      |
 
-## 📖 Documentação da API
 
-Com o servidor back-end em execução (`npm run server`), a documentação interativa gerada pelo Swagger fica disponível em:
-
-```
-http://localhost:3000/api-docs
-```
-
-Principais endpoints:
-
-| Método   | Rota                     | Descrição                                  |
-|----------|--------------------------|----------------------------------------------|
-| `POST`   | `/auth/register`         | Cria uma nova conta de usuário                 |
-| `POST`   | `/auth/login`             | Autentica com e-mail e senha                    |
-| `POST`   | `/auth/forgot-password`  | Solicita redefinição de senha                    |
-| `GET`    | `/auth/me`                | Retorna dados do usuário autenticado (Bearer)     |
-| `GET`    | `/api/playlists`           | Lista as playlists do usuário autenticado           |
-| `POST`   | `/api/playlists`           | Cria uma nova playlist                               |
-| `GET`    | `/api/user/favorites`     | Lista as faixas favoritas do usuário autenticado      |
-| `GET`    | `/api/categories`          | Lista as categorias/moods                              |
-| `GET`    | `/songs`                   | Lista todas as músicas do catálogo                  |
-| `GET`    | `/songs/:id`               | Retorna uma música específica pelo ID                |
-| `POST`   | `/songs`                   | Adiciona uma nova música ao catálogo                  |
-| `DELETE` | `/songs/:id`                | Remove uma música do catálogo                          |
 
 ## ⌨️ Atalhos de Teclado
 
