@@ -23,7 +23,7 @@ export const createPlaylist = (data: { title: string; description?: string; cove
 };
 
 export const renamePlaylist = (id: string, title: string): Promise<UserPlaylist> =>
-  apiFetch(`/api/playlists/${id}`, { method: 'PUT', body: JSON.stringify({ title }) });
+  apiFetch(`/api/playlists/${id}`, { method: 'PUT', body: JSON.stringify({ name: title }) });
 
 export const deletePlaylist = (id: string): Promise<void> =>
   apiFetch(`/api/playlists/${id}`, { method: 'DELETE' });

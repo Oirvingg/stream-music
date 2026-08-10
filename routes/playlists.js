@@ -6,7 +6,7 @@ const router = express.Router();
 const toPlaylistResponse = (row) => ({
   id: String(row.id),
   userId: String(row.user_id),
-  name: row.name,
+  title: row.name,
   description: row.description,
   coverUrl: row.cover_url,
   tracks: row.tracks,
