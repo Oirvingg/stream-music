@@ -63,7 +63,10 @@ router.get('/', async (req, res) => {
       'SELECT * FROM playlists WHERE user_id = $1 ORDER BY created_at DESC',
       [req.user.uid]
     );
-    res.json(rows.map(toPlaylistResponse));
+    console.log('📊 GET /api/playlists - Raw rows from DB:', JSON.stringify(rows, null, 2));
+    const transformedPlaylists = rows.map(toPlaylistResponse);
+    console.log('📝 GET /api/playlists - After toPlaylistResponse:', JSON.stringify(transformedPlaylists, null, 2));
+    res.json(transformedPlaylists);
   } catch (error) {
     console.error('Erro ao listar playlists:', error);
     res.status(500).json({ message: 'Erro ao buscar playlists.' });
@@ -107,7 +110,18 @@ router.post('/', async (req, res) => {
       [req.user.uid, trimmedName, description || '', coverUrl || '']
     );
     console.log('✅ Playlist criada:', rows[0].id, 'with name:', rows[0].name);
-    res.status(201).json(toPlaylistResponse(rows[0]));
+    
+    // 🔍 Log do objeto do banco ANTES de transformar
+    console.log('📊 Raw database row:', JSON.stringify(rows[0], null, 2));
+    
+    // 🔍 Transformar com log
+    const transformedPlaylist = toPlaylistResponse(rows[0]);
+    console.log('📝 After toPlaylistResponse:', JSON.stringify(transformedPlaylist, null, 2));
+    
+    // 🔍 Confirmar que está sendo retornado corretamente
+    console.log('🎵 Sending response with title:', transformedPlaylist.title);
+    
+    res.status(201).json(transformedPlaylist);
   } catch (error) {
     console.error('❌ Erro ao criar playlist:', error.message, error.code);
     res.status(500).json({ message: 'Erro ao criar playlist.', error: error.message });
