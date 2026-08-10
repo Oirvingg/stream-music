@@ -32,7 +32,6 @@ const toPlaylistResponse = (row) => {
     throw err;
   }
 };
-};
 
 /**
  * Busca uma playlist pelo ID e garante que ela pertence ao usuário
@@ -143,6 +142,7 @@ router.post('/', async (req, res) => {
     console.log('✅ Playlist criada:', rows[0].id, 'with name:', rows[0].name);
     
     // 🔍 Construir resposta manualmente para garantir que APENAS title sai
+    console.log('🚨 ABOUT TO CREATE RESPONSE OBJECT');
     const response = {
       id: String(rows[0].id),
       userId: String(rows[0].user_id),
@@ -154,8 +154,11 @@ router.post('/', async (req, res) => {
       updatedAt: rows[0].updated_at,
     };
     
+    console.log('🚨 RESPONSE OBJECT CREATED:', response);
     console.log('✅ Final response to send:', JSON.stringify(response));
+    console.log('🚨 ABOUT TO SEND res.status(201).json(response)');
     res.status(201).json(response);
+    console.log('🚨 AFTER res.status(201).json(response)');
   } catch (error) {
     console.error('❌ Erro ao criar playlist:', error.message, error.code);
     res.status(500).json({ message: 'Erro ao criar playlist.', error: error.message });
