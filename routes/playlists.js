@@ -83,9 +83,20 @@ router.get('/', async (req, res) => {
       'SELECT * FROM playlists WHERE user_id = $1 ORDER BY created_at DESC',
       [req.user.uid]
     );
-    console.log('📊 GET /api/playlists - Raw rows from DB:', JSON.stringify(rows, null, 2));
-    const transformedPlaylists = rows.map(toPlaylistResponse);
-    console.log('📝 GET /api/playlists - After toPlaylistResponse:', JSON.stringify(transformedPlaylists, null, 2));
+    
+    // 🔍 Transformar CADA playlist manualmente para garantir apenas 'title'
+    const transformedPlaylists = rows.map(row => ({
+      id: String(row.id),
+      userId: String(row.user_id),
+      title: row.name,
+      description: row.description,
+      coverUrl: row.cover_url,
+      tracks: row.tracks,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+    }));
+    
+    console.log('📊 GET /api/playlists - Returning:', JSON.stringify(transformedPlaylists, null, 2));
     res.json(transformedPlaylists);
   } catch (error) {
     console.error('Erro ao listar playlists:', error);
@@ -119,37 +130,36 @@ router.post('/', async (req, res) => {
     return res.status(400).json({ message: 'O nome da playlist é obrigatório.' });
   }
 
-   try {
-     const trimmedName = name.trim();
-     console.log('📝 Trimmed name to insert:', trimmedName);
-     
-     const { rows } = await pool.query(
-       `INSERT INTO playlists (user_id, name, description, cover_url, tracks)
-        VALUES ($1, $2, $3, $4, '[]'::jsonb)
-        RETURNING *`,
-       [req.user.uid, trimmedName, description || '', coverUrl || '']
-     );
-     console.log('✅ Playlist criada:', rows[0].id, 'with name:', rows[0].name);
-     
-     // 🔍 Log do objeto do banco ANTES de transformar
-     console.log('📊 Raw database row:', JSON.stringify(rows[0], null, 2));
-     
-     // 🔍 CHECKPOINT: antes de chamar toPlaylistResponse
-     console.log('🚨 ABOUT TO CALL toPlaylistResponse with:', rows[0]);
-     
-     // 🔍 Transformar com log
-     const transformedPlaylist = toPlaylistResponse(rows[0]);
-     console.log('🚨 AFTER toPlaylistResponse, transformedPlaylist is:', transformedPlaylist);
-     console.log('📝 After toPlaylistResponse:', JSON.stringify(transformedPlaylist, null, 2));
-     
-     // 🔍 Confirmar que está sendo retornado corretamente
-     console.log('🎵 Sending response with title:', transformedPlaylist.title);
-     
-     res.status(201).json(transformedPlaylist);
-   } catch (error) {
-     console.error('❌ Erro ao criar playlist:', error.message, error.code);
-     res.status(500).json({ message: 'Erro ao criar playlist.', error: error.message });
-   }
+  try {
+    const trimmedName = name.trim();
+    console.log('📝 Trimmed name to insert:', trimmedName);
+    
+    const { rows } = await pool.query(
+      `INSERT INTO playlists (user_id, name, description, cover_url, tracks)
+       VALUES ($1, $2, $3, $4, '[]'::jsonb)
+       RETURNING *`,
+      [req.user.uid, trimmedName, description || '', coverUrl || '']
+    );
+    console.log('✅ Playlist criada:', rows[0].id, 'with name:', rows[0].name);
+    
+    // 🔍 Construir resposta manualmente para garantir que APENAS title sai
+    const response = {
+      id: String(rows[0].id),
+      userId: String(rows[0].user_id),
+      title: rows[0].name,
+      description: rows[0].description,
+      coverUrl: rows[0].cover_url,
+      tracks: rows[0].tracks,
+      createdAt: rows[0].created_at,
+      updatedAt: rows[0].updated_at,
+    };
+    
+    console.log('✅ Final response to send:', JSON.stringify(response));
+    res.status(201).json(response);
+  } catch (error) {
+    console.error('❌ Erro ao criar playlist:', error.message, error.code);
+    res.status(500).json({ message: 'Erro ao criar playlist.', error: error.message });
+  }
 });
 
 /**
