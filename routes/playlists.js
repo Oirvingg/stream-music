@@ -88,6 +88,7 @@ router.post('/', async (req, res) => {
   const { name, description, coverUrl } = req.body;
 
   console.log('📝 POST /api/playlists body:', req.body);
+  console.log('📝 Extracted name:', name);
   console.log('👤 User UID:', req.user?.uid);
 
   if (!name || typeof name !== 'string' || !name.trim()) {
@@ -96,13 +97,16 @@ router.post('/', async (req, res) => {
   }
 
   try {
+    const trimmedName = name.trim();
+    console.log('📝 Trimmed name to insert:', trimmedName);
+    
     const { rows } = await pool.query(
       `INSERT INTO playlists (user_id, name, description, cover_url, tracks)
        VALUES ($1, $2, $3, $4, '[]'::jsonb)
        RETURNING *`,
-      [req.user.uid, name.trim(), description || '', coverUrl || '']
+      [req.user.uid, trimmedName, description || '', coverUrl || '']
     );
-    console.log('✅ Playlist criada:', rows[0].id);
+    console.log('✅ Playlist criada:', rows[0].id, 'with name:', rows[0].name);
     res.status(201).json(toPlaylistResponse(rows[0]));
   } catch (error) {
     console.error('❌ Erro ao criar playlist:', error.message, error.code);
