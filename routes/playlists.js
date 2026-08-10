@@ -6,7 +6,7 @@ const router = express.Router();
 const toPlaylistResponse = (row) => ({
   id: String(row.id),
   userId: String(row.user_id),
-  title: row.title,
+  name: row.name,
   description: row.description,
   coverUrl: row.cover_url,
   tracks: row.tracks,
@@ -85,18 +85,18 @@ router.get('/', async (req, res) => {
  *         description: Título é obrigatório
  */
 router.post('/', async (req, res) => {
-  const { title, description, coverUrl } = req.body;
+  const { name, description, coverUrl } = req.body;
 
-  if (!title || !title.trim()) {
-    return res.status(400).json({ message: 'O título da playlist é obrigatório.' });
+  if (!name || !name.trim()) {
+    return res.status(400).json({ message: 'O nome da playlist é obrigatório.' });
   }
 
   try {
     const { rows } = await pool.query(
-      `INSERT INTO playlists (user_id, title, description, cover_url, tracks)
+      `INSERT INTO playlists (user_id, name, description, cover_url, tracks)
        VALUES ($1, $2, $3, $4, '[]'::jsonb)
        RETURNING *`,
-      [req.user.uid, title.trim(), description || '', coverUrl || '']
+      [req.user.uid, name.trim(), description || '', coverUrl || '']
     );
     res.status(201).json(toPlaylistResponse(rows[0]));
   } catch (error) {
@@ -165,11 +165,11 @@ router.put('/:id', async (req, res) => {
     const playlist = await getOwnedPlaylistOr404(req, res);
     if (!playlist) return;
 
-    const { title, description, coverUrl, tracks } = req.body;
+    const { name, description, coverUrl, tracks } = req.body;
 
     const { rows } = await pool.query(
       `UPDATE playlists SET
-         title = COALESCE($1, title),
+         name = COALESCE($1, name),
          description = COALESCE($2, description),
          cover_url = COALESCE($3, cover_url),
          tracks = COALESCE($4, tracks),
@@ -177,7 +177,7 @@ router.put('/:id', async (req, res) => {
        WHERE id = $5
        RETURNING *`,
       [
-        title !== undefined ? title.trim() : null,
+        name !== undefined ? name.trim() : null,
         description !== undefined ? description : null,
         coverUrl !== undefined ? coverUrl : null,
         tracks !== undefined ? JSON.stringify(tracks) : null,

@@ -96,10 +96,12 @@ export const resetPassword = async (email: string): Promise<void> => {
 };
 
 /**
- * Desconecta o usuário ativo, descartando o token salvo.
+ * Desconecta o usuário ativo, descartando o token salvo e limpando storage local.
  */
 export const logoutUser = async (): Promise<void> => {
+  const { clearUserData } = await import('./storageCleanup');
   clearToken();
+  clearUserData();
 };
 
 /**

@@ -13,7 +13,7 @@ const toUserResponse = (user) => ({
   uid: String(user.id),
   name: user.name,
   email: user.email,
-  photoURL: user.photo_url || DEFAULT_PHOTO_URL,
+  photoURL: user.avatar_url || DEFAULT_PHOTO_URL,
   isFirstLogin: user.is_first_login,
 });
 
@@ -134,12 +134,26 @@ const signToken = (user) =>
 router.post('/register', async (req, res) => {
   const { name, email, password } = req.body;
 
-  if (!email || !password || !name) {
-    return res.status(400).json({ message: 'Nome, e-mail e senha são obrigatórios.' });
+  // Validação de existência e tipo
+  if (!name || typeof name !== 'string' || !name.trim()) {
+    return res.status(400).json({ message: 'Nome é obrigatório e deve ser um texto válido.' });
+  }
+
+  if (!email || typeof email !== 'string' || !email.trim()) {
+    return res.status(400).json({ message: 'E-mail é obrigatório e deve ser um texto válido.' });
+  }
+
+  if (!password || typeof password !== 'string') {
+    return res.status(400).json({ message: 'Senha é obrigatória e deve ser um texto válido.' });
   }
 
   if (password.length < 6) {
     return res.status(400).json({ message: 'A senha precisa ter pelo menos 6 caracteres.' });
+  }
+
+  // Validação básica de e-mail
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return res.status(400).json({ message: 'E-mail inválido. Verifique o formato.' });
   }
 
   try {
@@ -150,7 +164,7 @@ router.post('/register', async (req, res) => {
 
     const passwordHash = await bcrypt.hash(password, 10);
     const { rows } = await pool.query(
-      'INSERT INTO users (name, email, password_hash, photo_url) VALUES ($1, $2, $3, $4) RETURNING id, name, email, photo_url, is_first_login',
+      'INSERT INTO users (name, email, password_hash, avatar_url) VALUES ($1, $2, $3, $4) RETURNING id, name, email, avatar_url, is_first_login',
       [name.trim(), email, passwordHash, DEFAULT_PHOTO_URL]
     );
     const user = rows[0];
@@ -161,8 +175,8 @@ router.post('/register', async (req, res) => {
       user: toUserResponse(user),
     });
   } catch (error) {
-    console.error('Erro ao registrar usuário:', error);
-    res.status(500).json({ message: 'Erro ao criar a conta.' });
+    console.error('❌ Erro ao registrar usuário:', error.message, error.code);
+    res.status(500).json({ message: 'Erro ao criar a conta.', error: error.message });
   }
 });
 
@@ -209,8 +223,8 @@ router.post('/login', async (req, res) => {
       user: toUserResponse(user),
     });
   } catch (error) {
-    console.error('Erro ao autenticar usuário:', error);
-    res.status(500).json({ message: 'Erro ao autenticar.' });
+    console.error('❌ Erro ao autenticar usuário:', error.message, error.code);
+    res.status(500).json({ message: 'Erro ao autenticar.', error: error.message });
   }
 });
 
@@ -264,7 +278,7 @@ router.post('/forgot-password', async (req, res) => {
 router.get('/me', authenticate, async (req, res) => {
   try {
     const { rows } = await pool.query(
-      'SELECT id, name, email, photo_url, is_first_login FROM users WHERE id = $1',
+      'SELECT id, name, email, avatar_url, is_first_login FROM users WHERE id = $1',
       [req.user.uid]
     );
     const user = rows[0];
@@ -344,7 +358,7 @@ router.put('/avatar', authenticate, async (req, res) => {
 
   try {
     const { rows } = await pool.query(
-      'UPDATE users SET photo_url = $1 WHERE id = $2 RETURNING id, name, email, photo_url, is_first_login',
+      'UPDATE users SET avatar_url = $1, updated_at = now() WHERE id = $2 RETURNING id, name, email, avatar_url, is_first_login',
       [photoURL, req.user.uid]
     );
     const user = rows[0];
