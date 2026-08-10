@@ -119,33 +119,37 @@ router.post('/', async (req, res) => {
     return res.status(400).json({ message: 'O nome da playlist é obrigatório.' });
   }
 
-  try {
-    const trimmedName = name.trim();
-    console.log('📝 Trimmed name to insert:', trimmedName);
-    
-    const { rows } = await pool.query(
-      `INSERT INTO playlists (user_id, name, description, cover_url, tracks)
-       VALUES ($1, $2, $3, $4, '[]'::jsonb)
-       RETURNING *`,
-      [req.user.uid, trimmedName, description || '', coverUrl || '']
-    );
-    console.log('✅ Playlist criada:', rows[0].id, 'with name:', rows[0].name);
-    
-    // 🔍 Log do objeto do banco ANTES de transformar
-    console.log('📊 Raw database row:', JSON.stringify(rows[0], null, 2));
-    
-    // 🔍 Transformar com log
-    const transformedPlaylist = toPlaylistResponse(rows[0]);
-    console.log('📝 After toPlaylistResponse:', JSON.stringify(transformedPlaylist, null, 2));
-    
-    // 🔍 Confirmar que está sendo retornado corretamente
-    console.log('🎵 Sending response with title:', transformedPlaylist.title);
-    
-    res.status(201).json(transformedPlaylist);
-  } catch (error) {
-    console.error('❌ Erro ao criar playlist:', error.message, error.code);
-    res.status(500).json({ message: 'Erro ao criar playlist.', error: error.message });
-  }
+   try {
+     const trimmedName = name.trim();
+     console.log('📝 Trimmed name to insert:', trimmedName);
+     
+     const { rows } = await pool.query(
+       `INSERT INTO playlists (user_id, name, description, cover_url, tracks)
+        VALUES ($1, $2, $3, $4, '[]'::jsonb)
+        RETURNING *`,
+       [req.user.uid, trimmedName, description || '', coverUrl || '']
+     );
+     console.log('✅ Playlist criada:', rows[0].id, 'with name:', rows[0].name);
+     
+     // 🔍 Log do objeto do banco ANTES de transformar
+     console.log('📊 Raw database row:', JSON.stringify(rows[0], null, 2));
+     
+     // 🔍 CHECKPOINT: antes de chamar toPlaylistResponse
+     console.log('🚨 ABOUT TO CALL toPlaylistResponse with:', rows[0]);
+     
+     // 🔍 Transformar com log
+     const transformedPlaylist = toPlaylistResponse(rows[0]);
+     console.log('🚨 AFTER toPlaylistResponse, transformedPlaylist is:', transformedPlaylist);
+     console.log('📝 After toPlaylistResponse:', JSON.stringify(transformedPlaylist, null, 2));
+     
+     // 🔍 Confirmar que está sendo retornado corretamente
+     console.log('🎵 Sending response with title:', transformedPlaylist.title);
+     
+     res.status(201).json(transformedPlaylist);
+   } catch (error) {
+     console.error('❌ Erro ao criar playlist:', error.message, error.code);
+     res.status(500).json({ message: 'Erro ao criar playlist.', error: error.message });
+   }
 });
 
 /**
