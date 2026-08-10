@@ -179,10 +179,19 @@ export function ExpandedPlayer({ seek }: ExpandedPlayerProps) {
 
   const { data: relatedArtists = [], isLoading: isLoadingRelated } = useArtistRelated(artistId);
 
+  const menuIsLiked = menuTrack ? likedTracks.some((t) => t.id === menuTrack.id) : false;
+
   const menuItems: CardMenuItem[] = menuTrack ? [
     { id: 'shuffle', icon: Shuffle, label: 'Aleatório', onClick: () => shuffleQueue() },
     { id: 'play-next', icon: PlaySquare, label: 'Tocar a seguir', onClick: () => playNext(menuTrack) },
     { id: 'add-queue', icon: ListPlus, label: 'Adicionar à fila', onClick: () => addToQueue(menuTrack) },
+    {
+      id: 'favorite',
+      icon: Heart,
+      label: menuIsLiked ? 'Remover dos favoritos' : 'Favoritar',
+      iconClassName: menuIsLiked ? 'text-red-500 fill-red-500' : undefined,
+      onClick: () => toggleFavoriteTrack.mutate(menuTrack),
+    },
     { id: 'save-playlist', icon: Bookmark, label: 'Salvar na playlist', onClick: () => setSaveModalOpen(true) },
     { id: 'download', icon: Download, label: 'Baixar', onClick: () => console.log('[Baixar]', menuTrack.title) },
     { id: 'share', icon: Share2, label: 'Compartilhar', onClick: () => console.log('[Compartilhar]', menuTrack.title) },

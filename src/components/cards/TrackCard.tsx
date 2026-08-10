@@ -8,6 +8,7 @@ import {
   Bookmark,
   Share2,
   Trash2,
+  Heart,
 } from 'lucide-react';
 import { Track, getArtistName, getArtistId } from '../../types/music';
 import { usePlayerStore } from '../../store/usePlayerStore';
@@ -103,6 +104,13 @@ export function TrackCard({
         icon: ListPlus,
         label: 'Adicionar à fila',
         onClick: () => addToQueue(track),
+      },
+      {
+        id: 'favorite',
+        icon: Heart,
+        label: isLiked ? 'Remover dos favoritos' : 'Favoritar',
+        iconClassName: isLiked ? 'text-red-500 fill-red-500' : undefined,
+        onClick: () => toggleFavoriteTrack.mutate(track),
       },
       {
         id: 'download',

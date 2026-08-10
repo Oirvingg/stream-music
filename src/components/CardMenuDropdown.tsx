@@ -7,6 +7,7 @@ export interface CardMenuItem {
   label: string;
   onClick?: () => void;
   danger?: boolean;
+  iconClassName?: string;
 }
 
 interface CardMenuDropdownProps {
@@ -74,7 +75,9 @@ export function CardMenuDropdown({ anchorRect, items, onClose }: CardMenuDropdow
             item.danger ? 'text-red-400' : 'text-white'
           }`}
         >
-          <item.icon className={`w-5 h-5 shrink-0 ${item.danger ? 'text-red-400' : 'text-white/70'}`} />
+          <item.icon
+            className={`w-5 h-5 shrink-0 ${item.iconClassName ?? (item.danger ? 'text-red-400' : 'text-white/70')}`}
+          />
           <span className="truncate">{item.label}</span>
         </button>
       ))}

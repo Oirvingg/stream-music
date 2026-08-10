@@ -4,6 +4,7 @@ import {
   PlaySquare,
   ListPlus,
   Bookmark,
+  Heart,
   Download,
   Share2,
   Trash2,
@@ -95,10 +96,25 @@ export function TrackContextMenu({ track, x, y, onClose, trackList, onDelete }: 
     onClose();
   };
 
-  const menuItems = [
+  const handleToggleFavorite = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    toggleFavoriteTrack.mutate(track);
+    onClose();
+  };
+
+  interface ContextMenuItem {
+  icon: React.ElementType;
+  label: string;
+  favorite?: boolean;
+  danger?: boolean;
+  onClick: (e: React.MouseEvent) => void;
+}
+
+const menuItems: ContextMenuItem[] = [
     { icon: Shuffle, label: 'Aleatório', onClick: handleShuffle },
     { icon: PlaySquare, label: 'Tocar a seguir', onClick: handlePlayNext },
     { icon: ListPlus, label: 'Adicionar à fila', onClick: handleAddToQueue },
+    { icon: Heart, label: isLiked ? 'Remover dos favoritos' : 'Favoritar', favorite: isLiked, onClick: handleToggleFavorite },
     { icon: Download, label: 'Baixar', onClick: (e: React.MouseEvent) => { e.stopPropagation(); console.log('[Baixar]', track.title); onClose(); } },
     { icon: Bookmark, label: 'Salvar na playlist', onClick: (e: React.MouseEvent) => { e.stopPropagation(); setSaveModalOpen(true); } },
     { icon: Share2, label: 'Compartilhar', onClick: (e: React.MouseEvent) => { e.stopPropagation(); console.log('[Compartilhar]', track.title); onClose(); } },
@@ -121,7 +137,15 @@ export function TrackContextMenu({ track, x, y, onClose, trackList, onDelete }: 
             item.danger ? 'text-red-400' : 'text-white'
           }`}
         >
-          <item.icon className={`w-5 h-5 shrink-0 ${item.danger ? 'text-red-400' : 'text-white/70'}`} />
+          <item.icon
+            className={`w-5 h-5 shrink-0 ${
+              item.favorite
+                ? 'text-red-500 fill-red-500'
+                : item.danger
+                  ? 'text-red-400'
+                  : 'text-white/70'
+            }`}
+          />
           <span className="truncate">{item.label}</span>
         </button>
       ))}
