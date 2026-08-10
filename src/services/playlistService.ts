@@ -14,8 +14,13 @@ export interface UserPlaylist {
 
 export const fetchPlaylists = (): Promise<UserPlaylist[]> => apiFetch('/api/playlists');
 
-export const createPlaylist = (data: { title: string; description?: string; coverUrl?: string }): Promise<UserPlaylist> =>
-  apiFetch('/api/playlists', { method: 'POST', body: JSON.stringify(data) });
+export const createPlaylist = (data: { title: string; description?: string; coverUrl?: string }): Promise<UserPlaylist> => {
+  const { title, description, coverUrl } = data;
+  return apiFetch('/api/playlists', { 
+    method: 'POST', 
+    body: JSON.stringify({ name: title, description, coverUrl }) 
+  });
+};
 
 export const renamePlaylist = (id: string, title: string): Promise<UserPlaylist> =>
   apiFetch(`/api/playlists/${id}`, { method: 'PUT', body: JSON.stringify({ title }) });

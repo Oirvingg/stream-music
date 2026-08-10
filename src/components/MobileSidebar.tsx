@@ -44,7 +44,6 @@ export function MobileSidebar() {
         className={`md:hidden fixed top-0 left-0 z-50 h-dvh w-[280px] max-w-[85vw] flex flex-col bg-yt-black select-none transition-transform duration-300 ease-out ${
           isMobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
-        inert={!isMobileSidebarOpen}
       >
         {/* Topo: hamburger + logo */}
         <div className="flex items-center h-16 shrink-0 px-4 gap-3">

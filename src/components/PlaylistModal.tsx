@@ -10,11 +10,13 @@ interface PlaylistModalProps {
 
 export function PlaylistModal({ isOpen, onClose, initialName = '', onSave, title }: PlaylistModalProps) {
   const [name, setName] = useState(initialName);
+  const [error, setError] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (isOpen) {
       setName(initialName);
+      setError('');
       setTimeout(() => inputRef.current?.focus(), 100);
     }
   }, [isOpen, initialName]);
@@ -22,10 +24,20 @@ export function PlaylistModal({ isOpen, onClose, initialName = '', onSave, title
   if (!isOpen) return null;
 
   const handleSave = () => {
-    if (name.trim()) {
-      onSave(name.trim());
-      onClose();
+    const trimmedName = name.trim();
+    
+    if (!trimmedName) {
+      setError('O nome da playlist é obrigatório.');
+      return;
     }
+    
+    if (trimmedName.length > 100) {
+      setError('O nome não pode ter mais de 100 caracteres.');
+      return;
+    }
+    
+    onSave(trimmedName);
+    onClose();
   };
 
   return (
@@ -37,14 +49,19 @@ export function PlaylistModal({ isOpen, onClose, initialName = '', onSave, title
           ref={inputRef}
           type="text"
           value={name}
-          onChange={(e) => setName(e.target.value)}
+          onChange={(e) => {
+            setName(e.target.value);
+            setError('');
+          }}
           placeholder="Nome da playlist"
-          className="w-full bg-zinc-800 text-white rounded p-2 outline-none border-b-2 border-transparent focus:border-red-600 transition-colors mb-6"
+          className="w-full bg-zinc-800 text-white rounded p-2 outline-none border-b-2 border-transparent focus:border-red-600 transition-colors mb-2"
           onKeyDown={(e) => {
             if (e.key === 'Enter') handleSave();
             if (e.key === 'Escape') onClose();
           }}
         />
+        
+        {error && <p className="text-sm text-red-500 mb-4">{error}</p>}
         
         <div className="flex items-center justify-end gap-3">
           <button

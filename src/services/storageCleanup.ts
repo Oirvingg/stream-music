@@ -18,8 +18,8 @@ export function clearUserData(): void {
   sessionStorage.removeItem('player_state');
 
   // Limpa cache de queries do React Query
-  if (window.queryClient) {
-    window.queryClient.clear();
+  if ((window as any).queryClient) {
+    (window as any).queryClient.clear();
   }
 
   // Remove cookies de autenticação (se existirem)
