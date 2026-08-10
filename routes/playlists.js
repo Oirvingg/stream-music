@@ -87,7 +87,11 @@ router.get('/', async (req, res) => {
 router.post('/', async (req, res) => {
   const { name, description, coverUrl } = req.body;
 
-  if (!name || !name.trim()) {
+  console.log('📝 POST /api/playlists body:', req.body);
+  console.log('👤 User UID:', req.user?.uid);
+
+  if (!name || typeof name !== 'string' || !name.trim()) {
+    console.warn('⚠️ Validação falhou: nome inválido');
     return res.status(400).json({ message: 'O nome da playlist é obrigatório.' });
   }
 
@@ -98,10 +102,11 @@ router.post('/', async (req, res) => {
        RETURNING *`,
       [req.user.uid, name.trim(), description || '', coverUrl || '']
     );
+    console.log('✅ Playlist criada:', rows[0].id);
     res.status(201).json(toPlaylistResponse(rows[0]));
   } catch (error) {
-    console.error('Erro ao criar playlist:', error);
-    res.status(500).json({ message: 'Erro ao criar playlist.' });
+    console.error('❌ Erro ao criar playlist:', error.message, error.code);
+    res.status(500).json({ message: 'Erro ao criar playlist.', error: error.message });
   }
 });
 
