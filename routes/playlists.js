@@ -3,35 +3,16 @@ import { pool } from '../db.js';
 
 const router = express.Router();
 
-const toPlaylistResponse = (row) => {
-  try {
-    console.log('🔄 toPlaylistResponse called with row:', { id: row.id, name: row.name });
-    
-    const response = {
-      id: String(row.id),
-      userId: String(row.user_id),
-      title: row.name,
-      description: row.description,
-      coverUrl: row.cover_url,
-      tracks: row.tracks,
-      createdAt: row.created_at,
-      updatedAt: row.updated_at,
-    };
-    
-    // 🔍 GARANTIR que 'name' NUNCA sai na resposta
-    delete response.name;
-    delete response.user_id;
-    delete response.cover_url;
-    delete response.created_at;
-    delete response.updated_at;
-    
-    console.log('🔄 toPlaylistResponse returning:', JSON.stringify(response, null, 2));
-    return response;
-  } catch (err) {
-    console.error('❌ ERROR in toPlaylistResponse:', err);
-    throw err;
-  }
-};
+const toPlaylistResponse = (row) => ({
+  id: String(row.id),
+  userId: String(row.user_id),
+  title: row.name,
+  description: row.description,
+  coverUrl: row.cover_url,
+  tracks: row.tracks,
+  createdAt: row.created_at,
+  updatedAt: row.updated_at,
+});
 
 /**
  * Busca uma playlist pelo ID e garante que ela pertence ao usuário
@@ -82,21 +63,7 @@ router.get('/', async (req, res) => {
       'SELECT * FROM playlists WHERE user_id = $1 ORDER BY created_at DESC',
       [req.user.uid]
     );
-    
-    // 🔍 Transformar CADA playlist manualmente para garantir apenas 'title'
-    const transformedPlaylists = rows.map(row => ({
-      id: String(row.id),
-      userId: String(row.user_id),
-      title: row.name,
-      description: row.description,
-      coverUrl: row.cover_url,
-      tracks: row.tracks,
-      createdAt: row.created_at,
-      updatedAt: row.updated_at,
-    }));
-    
-    console.log('📊 GET /api/playlists - Returning:', JSON.stringify(transformedPlaylists, null, 2));
-    res.json(transformedPlaylists);
+    res.json(rows.map(toPlaylistResponse));
   } catch (error) {
     console.error('Erro ao listar playlists:', error);
     res.status(500).json({ message: 'Erro ao buscar playlists.' });
@@ -118,49 +85,23 @@ router.get('/', async (req, res) => {
  *         description: Título é obrigatório
  */
 router.post('/', async (req, res) => {
-  const { name, description, coverUrl } = req.body;
-
-  console.log('📝 POST /api/playlists body:', req.body);
-  console.log('📝 Extracted name:', name);
-  console.log('👤 User UID:', req.user?.uid);
+  const name = req.body?.name ?? req.body?.title;
+  const { description, coverUrl } = req.body;
 
   if (!name || typeof name !== 'string' || !name.trim()) {
-    console.warn('⚠️ Validação falhou: nome inválido');
     return res.status(400).json({ message: 'O nome da playlist é obrigatório.' });
   }
 
   try {
-    const trimmedName = name.trim();
-    console.log('📝 Trimmed name to insert:', trimmedName);
-    
     const { rows } = await pool.query(
       `INSERT INTO playlists (user_id, name, description, cover_url, tracks)
        VALUES ($1, $2, $3, $4, '[]'::jsonb)
        RETURNING *`,
-      [req.user.uid, trimmedName, description || '', coverUrl || '']
+      [req.user.uid, name.trim(), description || '', coverUrl || '']
     );
-    console.log('✅ Playlist criada:', rows[0].id, 'with name:', rows[0].name);
-    
-    // 🔍 Construir resposta manualmente para garantir que APENAS title sai
-    console.log('🚨 ABOUT TO CREATE RESPONSE OBJECT');
-    const response = {
-      id: String(rows[0].id),
-      userId: String(rows[0].user_id),
-      title: rows[0].name,
-      description: rows[0].description,
-      coverUrl: rows[0].cover_url,
-      tracks: rows[0].tracks,
-      createdAt: rows[0].created_at,
-      updatedAt: rows[0].updated_at,
-    };
-    
-    console.log('🚨 RESPONSE OBJECT CREATED:', response);
-    console.log('✅ Final response to send:', JSON.stringify(response));
-    console.log('🚨 ABOUT TO SEND res.status(201).json(response)');
-    res.status(201).json(response);
-    console.log('🚨 AFTER res.status(201).json(response)');
+    res.status(201).json(toPlaylistResponse(rows[0]));
   } catch (error) {
-    console.error('❌ Erro ao criar playlist:', error.message, error.code);
+    console.error('Erro ao criar playlist:', error.message, error.code);
     res.status(500).json({ message: 'Erro ao criar playlist.', error: error.message });
   }
 });
@@ -225,7 +166,8 @@ router.put('/:id', async (req, res) => {
     const playlist = await getOwnedPlaylistOr404(req, res);
     if (!playlist) return;
 
-    const { name, description, coverUrl, tracks } = req.body;
+    const name = req.body?.name ?? req.body?.title;
+    const { description, coverUrl, tracks } = req.body;
 
     const { rows } = await pool.query(
       `UPDATE playlists SET
