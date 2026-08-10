@@ -4,28 +4,33 @@ import { pool } from '../db.js';
 const router = express.Router();
 
 const toPlaylistResponse = (row) => {
-  console.log('🔄 toPlaylistResponse called with row:', { id: row.id, name: row.name });
-  
-  const response = {
-    id: String(row.id),
-    userId: String(row.user_id),
-    title: row.name,
-    description: row.description,
-    coverUrl: row.cover_url,
-    tracks: row.tracks,
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
-  };
-  
-  // 🔍 GARANTIR que 'name' NUNCA sai na resposta
-  delete response.name;
-  delete response.user_id;
-  delete response.cover_url;
-  delete response.created_at;
-  delete response.updated_at;
-  
-  console.log('🔄 toPlaylistResponse returning:', response);
-  return response;
+  try {
+    console.log('🔄 toPlaylistResponse called with row:', { id: row.id, name: row.name });
+    
+    const response = {
+      id: String(row.id),
+      userId: String(row.user_id),
+      title: row.name,
+      description: row.description,
+      coverUrl: row.cover_url,
+      tracks: row.tracks,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+    };
+    
+    // 🔍 GARANTIR que 'name' NUNCA sai na resposta
+    delete response.name;
+    delete response.user_id;
+    delete response.cover_url;
+    delete response.created_at;
+    delete response.updated_at;
+    
+    console.log('🔄 toPlaylistResponse returning:', JSON.stringify(response, null, 2));
+    return response;
+  } catch (err) {
+    console.error('❌ ERROR in toPlaylistResponse:', err);
+    throw err;
+  }
 };
 };
 
