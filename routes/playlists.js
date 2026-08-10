@@ -4,6 +4,8 @@ import { pool } from '../db.js';
 const router = express.Router();
 
 const toPlaylistResponse = (row) => {
+  console.log('🔄 toPlaylistResponse called with row:', { id: row.id, name: row.name });
+  
   const response = {
     id: String(row.id),
     userId: String(row.user_id),
@@ -22,7 +24,9 @@ const toPlaylistResponse = (row) => {
   delete response.created_at;
   delete response.updated_at;
   
+  console.log('🔄 toPlaylistResponse returning:', response);
   return response;
+};
 };
 
 /**
