@@ -3,16 +3,27 @@ import { pool } from '../db.js';
 
 const router = express.Router();
 
-const toPlaylistResponse = (row) => ({
-  id: String(row.id),
-  userId: String(row.user_id),
-  title: row.name,
-  description: row.description,
-  coverUrl: row.cover_url,
-  tracks: row.tracks,
-  createdAt: row.created_at,
-  updatedAt: row.updated_at,
-});
+const toPlaylistResponse = (row) => {
+  const response = {
+    id: String(row.id),
+    userId: String(row.user_id),
+    title: row.name,
+    description: row.description,
+    coverUrl: row.cover_url,
+    tracks: row.tracks,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+  
+  // 🔍 GARANTIR que 'name' NUNCA sai na resposta
+  delete response.name;
+  delete response.user_id;
+  delete response.cover_url;
+  delete response.created_at;
+  delete response.updated_at;
+  
+  return response;
+};
 
 /**
  * Busca uma playlist pelo ID e garante que ela pertence ao usuário
