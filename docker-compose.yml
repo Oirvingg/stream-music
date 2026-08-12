@@ -5,7 +5,6 @@ services:
       dockerfile: Dockerfile
       target: runtime
     container_name: stream-music-backend
-    image: stream-music:dev
     working_dir: /app
     env_file:
       - .env
@@ -26,7 +25,11 @@ services:
     ports:
       - "3000:3000"
     volumes:
+      # Bind mount do código-fonte para refletir edições no container.
       - .:/app
+      # Volume anônimo para node_modules: impede que o bind mount
+      # sobrescreva os node_modules instalados DENTRO do container
+      # (que contêm vite e demais devDependencies).
       - /app/node_modules
     command: ["sh", "-c", "node server.js"]
     depends_on:
@@ -37,23 +40,29 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-      target: runtime
+      target: frontend-dev
     container_name: stream-music-frontend
-    image: stream-music:dev
     working_dir: /app
     env_file:
       - .env
     environment:
+      # Em dev, NÃO definir NODE_ENV=production, caso contrário o npm
+      # omitiria devDependencies (vite, tailwindcss, plugin-react...).
       NODE_ENV: development
       VITE_API_URL: http://localhost:3000
       VITE_LASTFM_API_KEY: ${VITE_LASTFM_API_KEY:-}
-      PORT: 3000
+      PORT: 5173
     ports:
       - "5173:5173"
     volumes:
+      # Bind mount do código-fonte para hot-reload.
       - .:/app
+      # Volume anônimo para node_modules: protege os node_modules do
+      # container (com vite instalado) contra a sobrescrita do host.
       - /app/node_modules
-    command: ["npm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "5173"]
+    # O CMD do Dockerfile (npx vite ...) já sobe o Vite dev server.
+    # Override só torna explícito o host/port.
+    command: ["npx", "vite", "--host", "0.0.0.0", "--port", "5173"]
     depends_on:
       - backend
 
