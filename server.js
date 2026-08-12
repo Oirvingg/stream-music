@@ -83,14 +83,35 @@ app.use('/api/deezer', async (req, res) => {
   const targetPath = req.path || '/';
   const query = new URLSearchParams(req.query).toString();
   const url = `${DEEZER_BASE_URL}${targetPath}${query ? `?${query}` : ''}`;
+  const startedAt = Date.now();
 
   try {
     const response = await fetch(url);
-    const data = await response.json();
-    res.status(response.status).json(data);
+
+    // Se o Deezer respondeu, repassamos o status e o corpo (JSON ou vazio).
+    const text = await response.text();
+    if (!text) {
+      console.warn(`[deezer-proxy] ${req.method} ${url} -> ${response.status} (corpo vazio) em ${Date.now() - startedAt}ms`);
+      return res.status(response.status).end();
+    }
+
+    try {
+      const data = JSON.parse(text);
+      if (response.status >= 500) {
+        console.error(`[deezer-proxy] ${req.method} ${url} -> ${response.status} em ${Date.now() - startedAt}ms`);
+      } else if (response.status >= 400) {
+        console.warn(`[deezer-proxy] ${req.method} ${url} -> ${response.status} em ${Date.now() - startedAt}ms`);
+      } else {
+        console.log(`[deezer-proxy] ${req.method} ${url} -> ${response.status} em ${Date.now() - startedAt}ms`);
+      }
+      return res.status(response.status).json(data);
+    } catch {
+      console.error(`[deezer-proxy] Resposta não-JSON do Deezer (status ${response.status}) em ${Date.now() - startedAt}ms`);
+      return res.status(502).json({ error: 'Resposta inválida do Deezer' });
+    }
   } catch (error) {
-    console.error('Erro ao repassar requisição para o Deezer:', error);
-    res.status(502).json({ error: 'Falha ao buscar dados do Deezer' });
+    console.error(`[deezer-proxy] Falha de rede/timeout ao chamar ${url} após ${Date.now() - startedAt}ms:`, error);
+    res.status(502).json({ error: 'Falha ao buscar dados do Deezer', detail: error?.message });
   }
 });
 
@@ -110,6 +131,20 @@ app.use('/admin', adminRoutes);
 // Rota inicial de verificação
 app.get('/', (req, res) => {
   res.send('Servidor do Stream Music rodando com sucesso! 🚀');
+});
+
+// Handler 404 — qualquer rota não tratada acima cai aqui (em vez de devolver HTML do Vite no dev).
+app.use((req, res) => {
+  res.status(404).json({ error: 'Rota não encontrada', path: req.originalUrl });
+});
+
+// Handler global de erros — qualquer exceção não capturada vira 500 com
+// mensagem + stack no log do servidor (mantém a resposta genérica para o cliente).
+app.use((err, req, res, next) => {
+  console.error(`[error] ${req.method} ${req.originalUrl} ->`, err);
+  res.status(err.status || 500).json({
+    error: err.message || 'Erro interno do servidor',
+  });
 });
 
 // Inicialização do Servidor

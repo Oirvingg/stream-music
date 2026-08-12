@@ -7,11 +7,16 @@ services:
     container_name: stream-music-backend
     image: stream-music:dev
     working_dir: /app
+    env_file:
+      - .env
     environment:
       NODE_ENV: ${NODE_ENV:-development}
       PORT: 3000
       JWT_SECRET: ${JWT_SECRET:-change_me_in_production}
       CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:5173}
+      # Dentro do container, o host do PostgreSQL é o serviço `db`.
+      # DATABASE_URL tem prioridade em db.js — só defina aqui se quiser
+      # apontar para um banco externo (Render/Neon/Supabase).
       DATABASE_URL: ${DATABASE_URL:-}
       DB_USER: ${DB_USER:-postgres}
       DB_PASSWORD: ${DB_PASSWORD:-postgres}
@@ -36,6 +41,8 @@ services:
     container_name: stream-music-frontend
     image: stream-music:dev
     working_dir: /app
+    env_file:
+      - .env
     environment:
       NODE_ENV: development
       VITE_API_URL: http://localhost:3000
