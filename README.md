@@ -160,6 +160,28 @@ npm run server
 
 
 
+## 🐳 Executando com Docker
+
+Pré-requisitos: [Docker](https://www.docker.com/) e [Docker Compose](https://docs.docker.com/compose/) instalados.
+
+```bash
+# Na raiz do projeto, suba todos os serviços (frontend, backend e PostgreSQL)
+docker compose up --build
+
+# Front-end (Vite):  http://localhost:5173
+# Back-end (Express): http://localhost:3000
+# Documentação Swagger: http://localhost:3000/api-docs
+# PostgreSQL:        localhost:5432
+```
+
+Para parar os containers:
+
+```bash
+docker compose down
+```
+
+As variáveis de ambiente podem ser definidas em um arquivo `.env` na raiz (consulte a seção abaixo). O schema do banco é inicializado automaticamente a partir de `scripts/schema.sql` no primeiro start do serviço `db`.
+
 ## 🔑 Variáveis de Ambiente
 
 Crie um arquivo `.env` na raiz do projeto com base no `.env.example`:
