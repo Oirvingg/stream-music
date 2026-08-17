@@ -22,115 +22,6 @@ const signToken = (user) =>
     expiresIn: '7d',
   });
 
-/**
- * @swagger
- * components:
- *   schemas:
- *     RegisterRequest:
- *       type: object
- *       required:
- *         - name
- *         - email
- *         - password
- *       properties:
- *         name:
- *           type: string
- *           description: Nome completo do usuário
- *           example: "Carlos Silva"
- *         email:
- *           type: string
- *           format: email
- *           description: Endereço de e-mail do usuário
- *           example: "carlos@exemplo.com"
- *         password:
- *           type: string
- *           format: password
- *           description: Senha com no mínimo 6 caracteres
- *           example: "senha123"
- *
- *     LoginRequest:
- *       type: object
- *       required:
- *         - email
- *         - password
- *       properties:
- *         email:
- *           type: string
- *           format: email
- *           description: Endereço de e-mail cadastrado
- *           example: "carlos@exemplo.com"
- *         password:
- *           type: string
- *           format: password
- *           description: Senha da conta
- *           example: "senha123"
- *
- *     ForgotPasswordRequest:
- *       type: object
- *       required:
- *         - email
- *       properties:
- *         email:
- *           type: string
- *           format: email
- *           example: "carlos@exemplo.com"
- *
- *     UserResponse:
- *       type: object
- *       properties:
- *         uid:
- *           type: string
- *           example: "1"
- *         name:
- *           type: string
- *           example: "Carlos Silva"
- *         email:
- *           type: string
- *           example: "carlos@exemplo.com"
- *         photoURL:
- *           type: string
- *           example: "https://images.unsplash.com/photo-1534528741775-53994a69daeb"
- *         isFirstLogin:
- *           type: boolean
- *           description: Indica se o usuário ainda não concluiu o tutorial de onboarding
- *           example: true
- *
- *     AuthResponse:
- *       type: object
- *       properties:
- *         message:
- *           type: string
- *           example: "Autenticação realizada com sucesso!"
- *         token:
- *           type: string
- *           description: Token JWT de autenticação Bearer
- *           example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
- *         user:
- *           $ref: '#/components/schemas/UserResponse'
- */
-
-/**
- * @swagger
- * /auth/register:
- *   post:
- *     summary: Criar nova conta de usuário
- *     tags: [Autenticação]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/RegisterRequest'
- *     responses:
- *       201:
- *         description: Conta criada com sucesso
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/AuthResponse'
- *       400:
- *         description: Dados inválidos ou e-mail já cadastrado
- */
 router.post('/register', async (req, res) => {
   const { name, email, password } = req.body;
 
@@ -180,28 +71,6 @@ router.post('/register', async (req, res) => {
   }
 });
 
-/**
- * @swagger
- * /auth/login:
- *   post:
- *     summary: Autenticar usuário com E-mail e Senha
- *     tags: [Autenticação]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/LoginRequest'
- *     responses:
- *       200:
- *         description: Autenticado com sucesso
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/AuthResponse'
- *       401:
- *         description: E-mail ou senha incorretos
- */
 router.post('/login', async (req, res) => {
   const { email, password } = req.body;
 
@@ -228,24 +97,6 @@ router.post('/login', async (req, res) => {
   }
 });
 
-/**
- * @swagger
- * /auth/forgot-password:
- *   post:
- *     summary: Solicitar e-mail de redefinição de senha
- *     tags: [Autenticação]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/ForgotPasswordRequest'
- *     responses:
- *       200:
- *         description: E-mail de redefinição enviado com sucesso
- *       400:
- *         description: E-mail não fornecido
- */
 router.post('/forgot-password', async (req, res) => {
   const { email } = req.body;
   if (!email) {
@@ -257,24 +108,6 @@ router.post('/forgot-password', async (req, res) => {
   res.json({ message: `Instruções enviadas com sucesso para o e-mail: ${email}` });
 });
 
-/**
- * @swagger
- * /auth/me:
- *   get:
- *     summary: Obter dados do perfil do usuário atualmente autenticado
- *     tags: [Autenticação]
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: Dados do perfil do usuário
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/UserResponse'
- *       401:
- *         description: Não autorizado (Token Ausente ou Inválido)
- */
 router.get('/me', authenticate, async (req, res) => {
   try {
     const { rows } = await pool.query(
@@ -294,20 +127,6 @@ router.get('/me', authenticate, async (req, res) => {
   }
 });
 
-/**
- * @swagger
- * /auth/onboarding:
- *   put:
- *     summary: Marcar o tutorial de onboarding (primeiro login) como concluído
- *     tags: [Autenticação]
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: Flag isFirstLogin atualizada para false
- *       401:
- *         description: Não autorizado (Token Ausente ou Inválido)
- */
 router.put('/onboarding', authenticate, async (req, res) => {
   try {
     await pool.query('UPDATE users SET is_first_login = false WHERE id = $1', [req.user.uid]);
@@ -318,32 +137,6 @@ router.put('/onboarding', authenticate, async (req, res) => {
   }
 });
 
-/**
- * @swagger
- * /auth/avatar:
- *   put:
- *     summary: Atualizar a foto de perfil do usuário autenticado
- *     tags: [Autenticação]
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               photoURL:
- *                 type: string
- *                 description: URL da imagem ou data URI (base64) da nova foto de perfil
- *     responses:
- *       200:
- *         description: Foto de perfil atualizada com sucesso
- *       400:
- *         description: photoURL ausente ou inválida
- *       401:
- *         description: Não autorizado (Token Ausente ou Inválido)
- */
 router.put('/avatar', authenticate, async (req, res) => {
   const { photoURL } = req.body;
 

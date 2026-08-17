@@ -1,8 +1,11 @@
+// Garante que o Node.js não guarde logs em buffer dentro de containers Docker
+// (força o stdout a se comportar como um TTY, fazendo os logs aparecerem em tempo real).
+process.stdout.isTTY = true;
+
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
-import swaggerUi from 'swagger-ui-express';
-import swaggerJsdoc from 'swagger-jsdoc';
+import morgan from 'morgan';
 import songsRoutes from './routes/songs.js';
 import authRoutes from './routes/auth.js';
 import playlistsRoutes from './routes/playlists.js';
@@ -14,6 +17,9 @@ import { authenticate } from './middleware/authenticate.js';
 
 const app = express();
 const DEEZER_BASE_URL = 'https://api.deezer.com';
+
+// Logger HTTP em tempo real (formato 'dev': método + rota + status + tempo de resposta)
+app.use(morgan('dev'));
 
 // Middlewares para habilitar CORS e aceitar JSON
 // CORS_ORIGIN (ou FRONTEND_URL) deve conter a(s) URL(s) do frontend em produção
@@ -31,52 +37,6 @@ app.use(
 );
 // Limite elevado para acomodar o upload de foto de perfil como data URI (base64).
 app.use(express.json({ limit: '6mb' }));
-
-// Configurações do Swagger / OpenAPI 3.0
-const swaggerOptions = {
-  definition: {
-    openapi: '3.0.0',
-    info: {
-      title: 'Stream Music API',
-      version: '1.0.0',
-      description: 'API do Stream Music usando Node.js, Express e PostgreSQL',
-      contact: {
-        name: 'Suporte Stream Music',
-        url: 'http://localhost:3000',
-      },
-    },
-    servers: [
-      {
-        url: 'http://localhost:3000',
-        description: 'Servidor Local de Desenvolvimento',
-      },
-    ],
-    tags: [
-      {
-        name: 'Autenticação',
-        description: 'Endpoints para Login, Cadastro, Autenticação Social com Google e Recuperação de Senha',
-      },
-      {
-        name: 'Songs',
-        description: 'Endpoints para consulta e gerenciamento do catálogo de Músicas',
-      },
-    ],
-    components: {
-      securitySchemes: {
-        bearerAuth: {
-          type: 'http',
-          scheme: 'bearer',
-          bearerFormat: 'JWT',
-          description: 'Insira o token JWT retornado no login (ex: "Bearer <seu_token>")',
-        },
-      },
-    },
-  },
-  apis: ['./routes/*.js'],
-};
-
-const swaggerDocs = swaggerJsdoc(swaggerOptions);
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 
 // Proxy para o Deezer (contorna bloqueio CORS)
 app.use('/api/deezer', async (req, res) => {
@@ -130,6 +90,7 @@ app.use('/admin', adminRoutes);
 
 // Rota inicial de verificação
 app.get('/', (req, res) => {
+  console.log(`[request] ${req.method} ${req.originalUrl} -> requisição recebida`);
   res.send('Servidor do Stream Music rodando com sucesso! 🚀');
 });
 
@@ -152,5 +113,4 @@ const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
   console.log(`🔥 Servidor rodando na porta ${PORT}`);
-  console.log(`📄 Documentação do Swagger disponível em: http://localhost:${PORT}/api-docs`);
 });

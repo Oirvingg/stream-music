@@ -36,27 +36,6 @@ async function getOwnedPlaylistOr404(req, res) {
   return playlist;
 }
 
-/**
- * @swagger
- * tags:
- *   name: Playlists
- *   description: Playlists do usuário autenticado, persistidas no PostgreSQL
- */
-
-/**
- * @swagger
- * /api/playlists:
- *   get:
- *     summary: Lista as playlists do usuário autenticado
- *     tags: [Playlists]
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: Lista de playlists retornada com sucesso
- *       401:
- *         description: Não autenticado
- */
 router.get('/', async (req, res) => {
   try {
     const { rows } = await pool.query(
@@ -70,20 +49,6 @@ router.get('/', async (req, res) => {
   }
 });
 
-/**
- * @swagger
- * /api/playlists:
- *   post:
- *     summary: Cria uma nova playlist para o usuário autenticado
- *     tags: [Playlists]
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       201:
- *         description: Playlist criada com sucesso
- *       400:
- *         description: Título é obrigatório
- */
 router.post('/', async (req, res) => {
   const name = req.body?.name ?? req.body?.title;
   const { description, coverUrl } = req.body;
@@ -106,28 +71,6 @@ router.post('/', async (req, res) => {
   }
 });
 
-/**
- * @swagger
- * /api/playlists/{id}:
- *   get:
- *     summary: Obtém uma playlist do usuário autenticado pelo ID
- *     tags: [Playlists]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: Playlist encontrada
- *       403:
- *         description: A playlist pertence a outro usuário
- *       404:
- *         description: Playlist não encontrada
- */
 router.get('/:id', async (req, res) => {
   try {
     const playlist = await getOwnedPlaylistOr404(req, res);
@@ -139,28 +82,6 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-/**
- * @swagger
- * /api/playlists/{id}:
- *   put:
- *     summary: Atualiza título, descrição, capa ou a ordem das faixas de uma playlist
- *     tags: [Playlists]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: Playlist atualizada com sucesso
- *       403:
- *         description: A playlist pertence a outro usuário
- *       404:
- *         description: Playlist não encontrada
- */
 router.put('/:id', async (req, res) => {
   try {
     const playlist = await getOwnedPlaylistOr404(req, res);
@@ -194,28 +115,6 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-/**
- * @swagger
- * /api/playlists/{id}:
- *   delete:
- *     summary: Remove uma playlist do usuário autenticado
- *     tags: [Playlists]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: Playlist removida com sucesso
- *       403:
- *         description: A playlist pertence a outro usuário
- *       404:
- *         description: Playlist não encontrada
- */
 router.delete('/:id', async (req, res) => {
   try {
     const playlist = await getOwnedPlaylistOr404(req, res);
@@ -229,30 +128,6 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
-/**
- * @swagger
- * /api/playlists/{id}/tracks:
- *   post:
- *     summary: Adiciona uma faixa à playlist
- *     tags: [Playlists]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: Faixa adicionada com sucesso
- *       400:
- *         description: Faixa inválida
- *       403:
- *         description: A playlist pertence a outro usuário
- *       404:
- *         description: Playlist não encontrada
- */
 router.post('/:id/tracks', async (req, res) => {
   const { track } = req.body;
 
@@ -280,33 +155,6 @@ router.post('/:id/tracks', async (req, res) => {
   }
 });
 
-/**
- * @swagger
- * /api/playlists/{id}/tracks/{trackId}:
- *   delete:
- *     summary: Remove uma faixa da playlist
- *     tags: [Playlists]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *       - in: path
- *         name: trackId
- *         required: true
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: Faixa removida com sucesso
- *       403:
- *         description: A playlist pertence a outro usuário
- *       404:
- *         description: Playlist não encontrada
- */
 router.delete('/:id/tracks/:trackId', async (req, res) => {
   try {
     const playlist = await getOwnedPlaylistOr404(req, res);

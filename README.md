@@ -64,7 +64,6 @@ A aplicação permite pesquisar músicas em catálogos reais (Deezer e Last.fm),
 - **PostgreSQL** (driver `pg`) para persistência de usuários, playlists, favoritos e categorias
 - **bcryptjs** e **jsonwebtoken** para autenticação (hash de senha e emissão/verificação de JWT)
 - **CORS** e **dotenv** para configuração de ambiente
-- **Swagger (swagger-jsdoc + swagger-ui-express)** para documentação interativa da API (OpenAPI 3.0)
 - Estrutura de rotas modular (`/auth`, `/songs`, `/api/playlists`, `/api/user/favorites`, `/api/categories`)
 
 ### APIs e Integrações Externas
@@ -170,7 +169,6 @@ docker compose up --build
 
 # Front-end (Vite):  http://localhost:5173
 # Back-end (Express): http://localhost:3000
-# Documentação Swagger: http://localhost:3000/api-docs
 # PostgreSQL:        localhost:5432
 ```
 
@@ -180,7 +178,34 @@ Para parar os containers:
 docker compose down
 ```
 
-As variáveis de ambiente podem ser definidas em um arquivo `.env` na raiz (consulte a seção abaixo). O schema do banco é inicializado automaticamente a partir de `scripts/schema.sql` no primeiro start do serviço `db`.
+> ⚠️ **Resetar o banco (padrão Docker).** O script `scripts/schema.sql` é montado em `/docker-entrypoint-initdb.d/` e o Postgres da imagem oficial **só o executa na primeira inicialização com o volume `pgdata` vazio**. Se você alterar o `schema.sql` ou o banco ficar num estado inconsistente, o Postgres **não** re-aplica o schema sozinho. Para forçar a reinicialização do banco (isso **apaga todos os dados** do volume local, inclusive usuários/playlists):
+>
+> ```bash
+> docker compose down -v
+> docker compose up --build
+> ```
+>
+> Obs.: o nome real do banco criado é o valor de `POSTGRES_DB` no serviço `db` (resolvido de `DB_NAME`). Neste projeto é `stream_music`. Para inspecionar:
+> `docker compose exec db psql -U postgres -d stream_music -c "\dt"`
+
+> ⚠️ **Atenção com o `node_modules` no Docker.** Os serviços `backend` e `frontend` montam o código-fonte do host via bind mount, mas protegem o `node_modules` com um volume anônimo (`/app/node_modules`). Isso significa que **`npm install` no host NÃO instala pacotes no container** — é necessário rebuildar a imagem sempre que você adicionar ou atualizar uma dependência:
+>
+> ```bash
+> docker compose up --build
+> ```
+>
+> Esquecer isso é a causa mais comum do "minhas mudanças não aparecem / não tenho o pacote X" no Docker.
+
+### Variáveis de ambiente no Docker
+
+O backend usa dois arquivos diferentes para resolver o banco de dados, evitando conflito entre dev local e Docker:
+
+| Arquivo | Usado quando | Conteúdo principal |
+|---|---|---|
+| `.env` (raiz) | dev local sem Docker (`npm run server`) | `DATABASE_URL` aponta para banco em nuvem (Neon/Render) ou `DB_*` locais |
+| `.env.docker` | dentro do container do backend | `DATABASE_URL` vazia + `DB_HOST=db` (serviço do Compose) |
+
+O `env_file` do serviço `backend` referencia `.env.docker`, que tem prioridade e garante que o backend dentro do Docker conecte no Postgres do container `db` (não em `localhost` nem no banco em nuvem). O schema do banco é inicializado automaticamente a partir de `scripts/schema.sql` no primeiro start do serviço `db`.
 
 ## 🔑 Variáveis de Ambiente
 

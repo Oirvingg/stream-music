@@ -7,21 +7,19 @@ services:
     container_name: stream-music-backend
     working_dir: /app
     env_file:
-      - .env
+      # .env.docker contém DB_HOST=db e DATABASE_URL vazia para que o backend
+      # use o Postgres interno do Compose (em vez do .env da raiz, que aponta
+      # para localhost / banco em nuvem e silenciosamente quebra o acesso).
+      - .env.docker
     environment:
+      # Nome do serviço do backend na rede do Compose — exposto para que
+      # o frontend possa apontar o proxy do Vite para cá como rede de
+      # segurança caso VITE_API_URL esteja vazio.
+      BACKEND_HOST: backend
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:5173}
       NODE_ENV: ${NODE_ENV:-development}
       PORT: 3000
       JWT_SECRET: ${JWT_SECRET:-change_me_in_production}
-      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:5173}
-      # Dentro do container, o host do PostgreSQL é o serviço `db`.
-      # DATABASE_URL tem prioridade em db.js — só defina aqui se quiser
-      # apontar para um banco externo (Render/Neon/Supabase).
-      DATABASE_URL: ${DATABASE_URL:-}
-      DB_USER: ${DB_USER:-postgres}
-      DB_PASSWORD: ${DB_PASSWORD:-postgres}
-      DB_HOST: ${DB_HOST:-db}
-      DB_PORT: ${DB_PORT:-5432}
-      DB_NAME: ${DB_NAME:-stream_music}
     ports:
       - "3000:3000"
     volumes:
@@ -52,6 +50,9 @@ services:
       VITE_API_URL: http://localhost:3000
       VITE_LASTFM_API_KEY: ${VITE_LASTFM_API_KEY:-}
       PORT: 5173
+      # Rede de segurança: se VITE_API_URL estiver vazio, o proxy do Vite
+      # (rodando DENTRO deste container) usa este host para alcançar o backend.
+      BACKEND_HOST: backend
     ports:
       - "5173:5173"
     volumes:

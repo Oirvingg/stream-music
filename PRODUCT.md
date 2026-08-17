@@ -50,7 +50,6 @@ O visitante abre o app no navegador (desktop ou mobile), opcionalmente cria uma 
 
 - Código-fonte completo e funcional (cliente + servidor) neste repositório.
 - README.md detalhado com arquitetura, endpoints, atalhos e roadmap.
-- Documentação Swagger/OpenAPI interativa em `/api-docs` (servidor rodando).
 - Scripts de setup de banco (`scripts/schema.sql`, `scripts/setup-db.mjs`, `scripts/seed-postgres.mjs`).
 - Tailwind config com tema `yt.*` (paleta YouTube Music) e animações customizadas (fadeIn, shake).
 - **Ausências que trabalho futuro não deve fabricar:** não há casos de clientes, depoimentos, benchmarks de uso nem métricas de produção reais; o app é projeto de estudo, não produto comercial ativo.

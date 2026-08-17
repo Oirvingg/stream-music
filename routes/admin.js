@@ -19,35 +19,6 @@ const requireAdmin = (req, res, next) => {
   next();
 };
 
-/**
- * @swagger
- * /admin/cleanup-users:
- *   post:
- *     tags:
- *       - Administração
- *     summary: Limpeza completa de dados de usuários
- *     description: Remove todos os usuários, playlists, favoritos e sessões (IRREVERSÍVEL)
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: Limpeza realizada com sucesso
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                 message:
- *                   type: string
- *                 deletedRecords:
- *                   type: object
- *       403:
- *         description: Acesso negado (não é admin)
- *       500:
- *         description: Erro ao limpar dados
- */
 router.post('/cleanup-users', authenticate, requireAdmin, async (req, res) => {
   const client = await pool.connect();
   

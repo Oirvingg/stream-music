@@ -13,11 +13,13 @@ export default defineConfig(({ mode }) => {
       hmr: {
         protocol: 'ws',
         host: 'localhost',
-        port: 5173,
       },
       watch: {
         usePolling: true,
       },
+      // Host do backend: 'localhost' em dev local (fora do Docker) ou
+      // 'backend' (nome do serviço) dentro do container do Vite, quando a
+      // variável BACKEND_HOST for exportada pelo docker-compose.
       proxy: {
         '/api/deezer': {
           target: 'https://api.deezer.com',
@@ -30,23 +32,23 @@ export default defineConfig(({ mode }) => {
         // em dev local, sem essa env var, o proxy abaixo evita CORS e evita
         // que o fallback de SPA do Vite responda com index.html no lugar do JSON.
         '/auth': {
-          target: `http://localhost:${env.PORT || 3000}`,
+          target: `http://${process.env.BACKEND_HOST || env.BACKEND_HOST || 'localhost'}:${env.PORT || 3000}`,
           changeOrigin: true,
         },
         '/api/playlists': {
-          target: `http://localhost:${env.PORT || 3000}`,
+          target: `http://${process.env.BACKEND_HOST || env.BACKEND_HOST || 'localhost'}:${env.PORT || 3000}`,
           changeOrigin: true,
         },
         '/api/user': {
-          target: `http://localhost:${env.PORT || 3000}`,
+          target: `http://${process.env.BACKEND_HOST || env.BACKEND_HOST || 'localhost'}:${env.PORT || 3000}`,
           changeOrigin: true,
         },
         '/api/categories': {
-          target: `http://localhost:${env.PORT || 3000}`,
+          target: `http://${process.env.BACKEND_HOST || env.BACKEND_HOST || 'localhost'}:${env.PORT || 3000}`,
           changeOrigin: true,
         },
         '/api/lyrics': {
-          target: `http://localhost:${env.PORT || 3000}`,
+          target: `http://${process.env.BACKEND_HOST || env.BACKEND_HOST || 'localhost'}:${env.PORT || 3000}`,
           changeOrigin: true,
         },
       },

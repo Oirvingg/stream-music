@@ -3,27 +3,6 @@ import { pool } from '../db.js';
 
 const router = express.Router();
 
-/**
- * @swagger
- * tags:
- *   name: Favoritos
- *   description: Músicas curtidas pelo usuário autenticado, persistidas no PostgreSQL
- */
-
-/**
- * @swagger
- * /api/user/favorites:
- *   get:
- *     summary: Lista as músicas curtidas pelo usuário autenticado
- *     tags: [Favoritos]
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: Lista de faixas favoritas
- *       401:
- *         description: Não autenticado
- */
 router.get('/', async (req, res) => {
   try {
     const { rows } = await pool.query(
@@ -44,20 +23,6 @@ router.get('/', async (req, res) => {
   }
 });
 
-/**
- * @swagger
- * /api/user/favorites:
- *   post:
- *     summary: Adiciona uma faixa aos favoritos do usuário autenticado
- *     tags: [Favoritos]
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       201:
- *         description: Faixa adicionada aos favoritos
- *       400:
- *         description: Faixa inválida
- */
 router.post('/', async (req, res) => {
   const { itemType, itemId, itemData } = req.body;
 
@@ -92,24 +57,6 @@ router.post('/', async (req, res) => {
   }
 });
 
-/**
- * @swagger
- * /api/user/favorites/{trackId}:
- *   delete:
- *     summary: Remove uma faixa dos favoritos do usuário autenticado
- *     tags: [Favoritos]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: trackId
- *         required: true
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: Faixa removida dos favoritos
- */
 router.delete('/:itemId', async (req, res) => {
   const { itemType } = req.query;
 

@@ -47,38 +47,6 @@ async function fetchFromLyricsOvh(title, artist) {
   return { source: 'lyrics.ovh', plainLyrics, syncedLyrics: null };
 }
 
-/**
- * @swagger
- * tags:
- *   name: Letras
- *   description: Busca de letras de músicas com fallback entre múltiplas APIs públicas
- */
-
-/**
- * @swagger
- * /api/lyrics:
- *   get:
- *     summary: Busca a letra de uma faixa, tentando LRCLIB e depois lyrics.ovh
- *     tags: [Letras]
- *     parameters:
- *       - in: query
- *         name: title
- *         required: true
- *         schema:
- *           type: string
- *       - in: query
- *         name: artist
- *         required: true
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: >
- *           Sempre 200. Quando nenhuma API encontra a letra, retorna
- *           `{ source: null, plainLyrics: null, syncedLyrics: null }` em vez
- *           de um status de erro, para não gerar ruído de "404/502" no
- *           console do cliente para o caso normal de "sem letra disponível".
- */
 const NOT_FOUND_RESULT = { source: null, plainLyrics: null, syncedLyrics: null };
 
 router.get('/', async (req, res) => {
